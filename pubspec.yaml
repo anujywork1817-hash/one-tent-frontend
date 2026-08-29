@@ -1,0 +1,55 @@
+name: one_tent
+description: One Tent - Capsule Tent Booking for Kumbh Mela
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  dio: ^5.4.0
+  flutter_secure_storage: ^9.0.0
+  go_router: ^13.0.0
+  provider: ^6.1.2
+  cached_network_image: ^3.3.1
+  intl: ^0.19.0
+  shimmer: ^3.0.0
+  fluttertoast: ^8.2.4
+  flutter_animate: ^4.5.0
+  google_fonts: ^6.2.1
+  lottie: ^3.1.0
+  shared_preferences: ^2.5.5
+  razorpay_flutter: ^1.3.7
+  qr_flutter: ^4.1.0
+  image_picker: ^1.0.7
+  url_launcher: ^6.3.0
+  intl_phone_field: ^3.2.0
+
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/animations/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.jpeg"
+  min_sdk_android: 21
+  web:
+    generate: true
+    image_path: "assets/images/logo.jpeg"
+    background_color: "#F5E6C8"
+    theme_color: "#4A1000"
+  windows:
+    generate: true
+    image_path: "assets/images/logo.jpeg"
