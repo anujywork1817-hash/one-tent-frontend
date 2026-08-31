@@ -1,4 +1,4 @@
-package com.kumbh.kumbh_visitor
+package com.kumbh.one_tent
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

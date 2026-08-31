@@ -1,5 +1,6 @@
 import 'dart:ui' show PointerDeviceKind;
 
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -9,6 +10,15 @@ import 'router/app_router.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  // On Android/iOS this reads the native google-services.json /
+  // GoogleService-Info.plist automatically — no FirebaseOptions needed.
+  // Push notifications simply won't register (fails silently, logged) on
+  // any platform where those config files aren't present yet.
+  try {
+    await Firebase.initializeApp();
+  } catch (e) {
+    debugPrint('Firebase.initializeApp failed (push notifications disabled): $e');
+  }
   runApp(const KumbhApp());
 }
 

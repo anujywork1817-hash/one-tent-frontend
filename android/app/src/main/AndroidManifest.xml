@@ -2,6 +2,9 @@
 
     <!-- ADD THIS -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Android 13+ requires this to actually show a notification, even
+         though the FCM token/registration itself doesn't need it. -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
     <application
         android:label="One Tent"
@@ -29,6 +32,15 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Default channel/icon for a push that arrives while the app is
+             fully backgrounded — matches the channel PushService creates
+             for foreground-shown notifications. -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="one_tent_default" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@mipmap/ic_launcher" />
     </application>
 
     <queries>

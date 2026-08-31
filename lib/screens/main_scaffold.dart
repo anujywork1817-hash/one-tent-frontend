@@ -2,8 +2,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../core/notifications/push_service.dart';
 import '../providers/providers.dart';
 import 'home/home_screen.dart';
 import 'search/search_screen.dart';
@@ -45,8 +47,13 @@ class _MainScaffoldState extends State<MainScaffold> {
     // Loaded once here rather than per-screen so every price shown anywhere
     // in the app (tent cards, tent detail, checkout) can convert to the
     // guest's currency as soon as they land past login.
-    WidgetsBinding.instance.addPostFrameCallback(
-        (_) => context.read<TentProvider>().loadExchangeRates());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TentProvider>().loadExchangeRates();
+      // Also once-per-session: request notification permission, grab the
+      // FCM token, and register it with the backend so this device starts
+      // receiving booking/payment/passport/news pushes.
+      PushService.instance.init(GoRouter.of(context));
+    });
   }
 
   @override

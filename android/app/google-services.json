@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "796246091671",
+    "project_id": "one-tent-fe2b0",
+    "storage_bucket": "one-tent-fe2b0.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:796246091671:android:91d83c5b0f94636c4c06d2",
+        "android_client_info": {
+          "package_name": "com.kumbh.one_tent"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDUfHq0gLw3I3KuFgBfgnxookPsKYaWXcA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
