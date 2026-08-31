@@ -1,4 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 
 import '../providers/providers.dart';
@@ -25,6 +28,7 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   late int _currentIndex;
+  DateTime? _lastBackPress;
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -46,8 +50,43 @@ class _MainScaffoldState extends State<MainScaffold> {
   }
 
   @override
+  void didUpdateWidget(covariant MainScaffold oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Each bottom-nav route (/home, /my-bookings, ...) reuses this same
+    // MainScaffold widget. Without this, a stale _currentIndex from a
+    // previous navigation kept showing whichever tab was selected before —
+    // e.g. tapping "View My Bookings" could land back on the Home tab.
+    if (widget.initialIndex != oldWidget.initialIndex) {
+      _currentIndex = widget.initialIndex;
+    }
+  }
+
+  Future<bool> _handleBack() async {
+    if (_currentIndex != 0) {
+      setState(() => _currentIndex = 0);
+      return false;
+    }
+    final now = DateTime.now();
+    if (_lastBackPress == null ||
+        now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
+      _lastBackPress = now;
+      Fluttertoast.showToast(msg: 'Press back again to exit');
+      return false;
+    }
+    return true;
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) async {
+        if (didPop) return;
+        if (await _handleBack()) {
+          SystemNavigator.pop();
+        }
+      },
+      child: Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -81,6 +120,7 @@ class _MainScaffoldState extends State<MainScaffold> {
             ),
           ),
         ),
+      ),
       ),
     );
   }
