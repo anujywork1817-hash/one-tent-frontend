@@ -7,6 +7,16 @@ import '../../core/utils/countries_data.dart';
 import '../../core/utils/passport_validator.dart';
 import '../../providers/providers.dart';
 
+// ─── One Tent Design Tokens — same brand palette as every other screen ────
+const _kBodyBg     = Color(0xFFFFFFFF);
+const _kFieldFill  = Color(0xFFF3EEE7);
+const _kBorder     = Color(0xFFDDD0C4);
+const _kGold       = Color(0xFFD4891A);
+const _kMaroon     = Color(0xFF4A1000);
+const _kTextDark   = Color(0xFF2D0F05);
+const _kTextMid    = Color(0xFF7A4A30);
+const _kErrorCol   = Color(0xFFC0392B);
+
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -32,19 +42,11 @@ class _RegisterScreenState extends State<RegisterScreen>
   late final AnimationController _fadeCtrl;
   late final Animation<double>   _fadeAnim;
 
-  static const _bgDeep   = Color(0xFF0D0401);
-  static const _surface  = Color(0xFF1C0906);
-  static const _border   = Color(0xFF3D1A0D);
-  static const _gold     = Color(0xFFD4891A);
-  static const _cream    = Color(0xFFF5E6C8);
-  static const _muted    = Color(0xFFA07850);
-  static const _errorCol = Color(0xFFC0392B);
-
   @override
   void initState() {
     super.initState();
     _fadeCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 700));
+        vsync: this, duration: const Duration(milliseconds: 500));
     _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
     _fadeCtrl.forward();
   }
@@ -96,7 +98,7 @@ class _RegisterScreenState extends State<RegisterScreen>
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
-      child: _KumbhField(
+      child: _AuthField(
         controller:   ctrl,
         label:        label,
         icon:         icon,
@@ -116,14 +118,14 @@ class _RegisterScreenState extends State<RegisterScreen>
         Text(
           text.toUpperCase(),
           style: const TextStyle(
-            color: _gold,
+            color: _kGold,
             fontSize: 10,
-            fontWeight: FontWeight.w600,
+            fontWeight: FontWeight.w700,
             letterSpacing: 1.4,
           ),
         ),
         const SizedBox(width: 10),
-        Expanded(child: Divider(color: _border, thickness: 1)),
+        const Expanded(child: Divider(color: _kBorder, thickness: 1)),
       ]),
     );
   }
@@ -131,283 +133,253 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: _bgDeep,
-      body: Stack(children: [
-        // Background image
-        Positioned.fill(
-          child: Image.network(
-            'https://images.unsplash.com/photo-1506905925346-21bda4d32df4'
-            '?w=1000&h=1800&fit=crop',
-            fit: BoxFit.cover,
-            color: const Color(0xCC0D0401),
-            colorBlendMode: BlendMode.srcOver,
-            errorBuilder: (_, __, ___) => Container(color: _bgDeep),
-          ),
+      backgroundColor: _kBodyBg,
+      appBar: AppBar(
+        backgroundColor: _kBodyBg,
+        surfaceTintColor: _kBodyBg,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
+          onPressed: () => context.go('/login'),
         ),
+      ),
+      body: SafeArea(
+        top: false,
+        child: FadeTransition(
+          opacity: _fadeAnim,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(24, 0, 24, 28),
+            child: Column(children: [
+              const _LogoMark(),
+              const SizedBox(height: 20),
 
-        // Radial glow
-        Positioned(
-          top: MediaQuery.of(context).size.height * 0.15,
-          right: -80,
-          child: Container(
-            width: 280, height: 280,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              gradient: RadialGradient(colors: [
-                _gold.withValues(alpha: 0.10),
-                Colors.transparent,
-              ]),
-            ),
-          ),
-        ),
+              Text('Create Account',
+                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: _kTextDark, fontWeight: FontWeight.w800)),
+              const SizedBox(height: 6),
+              const Text('Register for your One Tent stay',
+                  style: TextStyle(color: _kTextMid, fontSize: 14)),
 
-        SafeArea(
-          child: FadeTransition(
-            opacity: _fadeAnim,
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              child: Column(children: [
-                const SizedBox(height: 8),
-                const _LogoMark(),
-                const SizedBox(height: 20),
+              const SizedBox(height: 28),
 
-                Text(
-                  'Create Account',
-                  style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                    color: _cream,
-                    fontWeight: FontWeight.w700,
-                    letterSpacing: 0.3,
-                  ),
+              Form(
+                key: _formKey,
+                autovalidateMode: _autovalidate
+                    ? AutovalidateMode.onUserInteraction
+                    : AutovalidateMode.disabled,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _sectionLabel('Personal Information'),
+                    _field(_nameCtrl, 'Full Name', Icons.person_outline),
+                    _field(
+                      _emailCtrl, 'Email Address',
+                      Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Email is required';
+                        if (!v.contains('@') || !v.contains('.')) return 'Enter a valid email address';
+                        return null;
+                      },
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 14),
+                      child: _AuthPhoneField(controller: _phoneCtrl),
+                    ),
+
+                    _sectionLabel('Travel Details'),
+                    _field(
+                      _countryCtrl, 'Country of Residence', Icons.public_outlined,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Country of Residence is required';
+                        if (!CountriesData.isValidCountry(v)) return 'Please enter a valid country';
+                        return null;
+                      },
+                    ),
+                    _field(
+                      _passportCtrl, 'Passport Number', Icons.badge_outlined,
+                      validator: (v) => PassportValidator.validate(
+                          _countryCtrl.text, v ?? ''),
+                    ),
+                    _field(
+                      _nationalityCtrl, 'Nationality', Icons.flag_outlined,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) return 'Nationality is required';
+                        if (!CountriesData.isValidNationality(v)) return 'Please enter a valid nationality';
+                        return null;
+                      },
+                    ),
+
+                    _sectionLabel('Security'),
+                    _field(
+                      _passCtrl,
+                      'Password',
+                      Icons.lock_outline,
+                      obscureText: _obscure,
+                      suffixIcon: GestureDetector(
+                        onTap: () => setState(() => _obscure = !_obscure),
+                        child: Icon(
+                          _obscure
+                              ? Icons.visibility_off_outlined
+                              : Icons.visibility_outlined,
+                          color: _kTextMid, size: 20,
+                        ),
+                      ),
+                      validator: (v) {
+                        if (v == null || v.isEmpty) return 'Password is required';
+                        if (v.length < 8) return 'Password must be at least 8 characters';
+                        if (!v.contains(RegExp(r'[A-Z]'))) {
+                          return 'Add at least one uppercase letter';
+                        }
+                        if (!v.contains(RegExp(r'[!-/:-@\[-`{-~]'))) {
+                          return 'Add at least one special character (e.g. !@#\$%)';
+                        }
+                        return null;
+                      },
+                    ),
+
+                    if (_error != null) ...[
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: _kErrorCol.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(children: [
+                          const Icon(Icons.error_outline,
+                              color: _kErrorCol, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(_error!,
+                                style: const TextStyle(
+                                    color: _kErrorCol, fontSize: 13)),
+                          ),
+                        ]),
+                      ),
+                    ],
+
+                    const SizedBox(height: 20),
+
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: _loading ? null : _register,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _kGold,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor:
+                              _kGold.withValues(alpha: 0.4),
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16)),
+                        ),
+                        child: _loading
+                            ? const SizedBox(
+                                width: 22, height: 22,
+                                child: CircularProgressIndicator(
+                                    color: Colors.white, strokeWidth: 2))
+                            : const Text('Create Account',
+                                style: TextStyle(
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.w800,
+                                    letterSpacing: 0.3)),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16),
+
+                    Text(
+                      'By registering you agree to our Terms of Service\n'
+                      'and Privacy Policy.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                          color: _kTextMid.withValues(alpha: 0.8),
+                          fontSize: 11,
+                          height: 1.6),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Register for your One Tent stay',
-                  style: Theme.of(context)
-                      .textTheme.bodyMedium?.copyWith(color: _muted),
-                ),
+              ),
 
-                const SizedBox(height: 28),
+              const SizedBox(height: 24),
 
-                // Form card
-                Container(
-                  decoration: BoxDecoration(
-                    color: _surface,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: _border, width: 1),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.55),
-                        blurRadius: 28,
-                        offset: const Offset(0, 12),
+              GestureDetector(
+                onTap: () => context.go('/login'),
+                child: const Text.rich(
+                  TextSpan(
+                    text: 'Already have an account?  ',
+                    style: TextStyle(color: _kTextMid, fontSize: 14),
+                    children: [
+                      TextSpan(
+                        text: 'Sign In',
+                        style: TextStyle(
+                            color: _kGold,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 14),
                       ),
                     ],
                   ),
-                  padding: const EdgeInsets.all(24),
-                  child: Form(
-                    key: _formKey,
-                    autovalidateMode: _autovalidate
-                        ? AutovalidateMode.onUserInteraction
-                        : AutovalidateMode.disabled,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-
-                        // Personal Info
-                        _sectionLabel('Personal Information'),
-                        _field(_nameCtrl, 'Full Name', Icons.person_outline),
-                        _field(
-                          _emailCtrl, 'Email Address',
-                          Icons.email_outlined,
-                          keyboardType: TextInputType.emailAddress,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Email is required';
-                            if (!v.contains('@') || !v.contains('.')) return 'Enter a valid email address';
-                            return null;
-                          },
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 14),
-                          child: _KumbhPhoneField(controller: _phoneCtrl),
-                        ),
-
-                        // Travel Details
-                        _sectionLabel('Travel Details'),
-                        _field(
-                          _countryCtrl, 'Country of Residence', Icons.public_outlined,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Country of Residence is required';
-                            if (!CountriesData.isValidCountry(v)) return 'Please enter a valid country';
-                            return null;
-                          },
-                        ),
-                        _field(
-                          _passportCtrl, 'Passport Number', Icons.badge_outlined,
-                          validator: (v) => PassportValidator.validate(
-                              _countryCtrl.text, v ?? ''),
-                        ),
-                        _field(
-                          _nationalityCtrl, 'Nationality', Icons.flag_outlined,
-                          validator: (v) {
-                            if (v == null || v.trim().isEmpty) return 'Nationality is required';
-                            if (!CountriesData.isValidNationality(v)) return 'Please enter a valid nationality';
-                            return null;
-                          },
-                        ),
-
-                        // Security
-                        _sectionLabel('Security'),
-                        _field(
-                          _passCtrl,
-                          'Password',
-                          Icons.lock_outline,
-                          obscureText: _obscure,
-                          suffixIcon: GestureDetector(
-                            onTap: () => setState(() => _obscure = !_obscure),
-                            child: Icon(
-                              _obscure
-                                  ? Icons.visibility_off_outlined
-                                  : Icons.visibility_outlined,
-                              color: _gold, size: 20,
-                            ),
-                          ),
-                          validator: (v) {
-                            if (v == null || v.isEmpty) return 'Password is required';
-                            if (v.length < 8) return 'Password must be at least 8 characters';
-                            if (!v.contains(RegExp(r'[A-Z]'))) {
-                              return 'Add at least one uppercase letter';
-                            }
-                            if (!v.contains(RegExp(r'[!-/:-@\[-`{-~]'))) {
-                              return 'Add at least one special character (e.g. !@#\$%)';
-                            }
-                            return null;
-                          },
-                        ),
-
-                        // Error
-                        if (_error != null) ...[
-                          const SizedBox(height: 4),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: _errorCol.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(10),
-                              border: Border.all(
-                                  color: _errorCol.withValues(alpha: 0.35)),
-                            ),
-                            child: Row(children: [
-                              const Icon(Icons.error_outline,
-                                  color: _errorCol, size: 16),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Text(_error!,
-                                    style: const TextStyle(
-                                        color: _errorCol, fontSize: 13)),
-                              ),
-                            ]),
-                          ),
-                        ],
-
-                        const SizedBox(height: 24),
-
-                        _RegisterButton(loading: _loading, onPressed: _register),
-
-                        const SizedBox(height: 16),
-
-                        Text(
-                          'By registering you agree to our Terms of Service\n'
-                          'and Privacy Policy.',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                              color: _muted.withValues(alpha: 0.7),
-                              fontSize: 11,
-                              height: 1.6),
-                        ),
-                      ],
-                    ),
-                  ),
                 ),
-
-                const SizedBox(height: 28),
-
-                GestureDetector(
-                  onTap: () => context.go('/login'),
-                  child: const Text.rich(
-                    TextSpan(
-                      text: 'Already have an account?  ',
-                      style: TextStyle(color: _muted, fontSize: 14),
-                      children: [
-                        TextSpan(
-                          text: 'Sign In',
-                          style: TextStyle(
-                            color: _gold,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const SizedBox(height: 20),
-              ]),
-            ),
+              ),
+            ]),
           ),
         ),
-      ]),
+      ),
     );
   }
 }
 
-// ── Logo Mark ─────────────────────────────────────────────
+// ─── Logo ───────────────────────────────────────────────────────────────
 class _LogoMark extends StatelessWidget {
   const _LogoMark();
-
-  static const _gold    = Color(0xFFD4891A);
-  static const _cream   = Color(0xFFF5E6C8);
 
   @override
   Widget build(BuildContext context) {
     return Column(children: [
       Container(
-        width: 68, height: 68,
-        padding: const EdgeInsets.all(5),
+        width: 64, height: 64,
+        padding: const EdgeInsets.all(4),
         decoration: BoxDecoration(
-          color: _cream,
-          borderRadius: BorderRadius.circular(17),
-          border: Border.all(color: _gold.withValues(alpha: 0.6), width: 1.5),
+          color: _kFieldFill,
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: _gold.withValues(alpha: 0.18),
-              blurRadius: 18,
-              spreadRadius: 2,
-            ),
+                color: _kMaroon.withValues(alpha: 0.12),
+                blurRadius: 16,
+                offset: const Offset(0, 6)),
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(13),
-          child: Image.asset('assets/images/logo.jpeg', fit: BoxFit.cover),
+          borderRadius: BorderRadius.circular(12),
+          child: Image.asset('assets/images/logo.jpeg', fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) =>
+                  const Icon(Icons.cabin, color: _kGold, size: 28)),
         ),
       ),
       const SizedBox(height: 12),
-      Row(mainAxisSize: MainAxisSize.min, children: [
-        const Text('One ',
-            style: TextStyle(
-                color: _cream, fontSize: 17,
-                fontWeight: FontWeight.w400, letterSpacing: 0.4)),
-        Text('Tent',
-            style: TextStyle(
-                color: _gold, fontSize: 17,
-                fontWeight: FontWeight.w600, letterSpacing: 0.4)),
-      ]),
+      const Text.rich(
+        TextSpan(
+          text: 'One ',
+          style: TextStyle(
+              color: _kTextDark, fontSize: 17, fontWeight: FontWeight.w500),
+          children: [
+            TextSpan(
+                text: 'Tent',
+                style: TextStyle(color: _kGold, fontWeight: FontWeight.w700)),
+          ],
+        ),
+      ),
     ]);
   }
 }
 
-// ── Themed text field ─────────────────────────────────────
-class _KumbhField extends StatelessWidget {
-  const _KumbhField({
+// ─── Themed text field ────────────────────────────────────────────────────
+class _AuthField extends StatelessWidget {
+  const _AuthField({
     required this.controller,
     required this.label,
     required this.icon,
@@ -425,103 +397,91 @@ class _KumbhField extends StatelessWidget {
   final Widget?                    suffixIcon;
   final String? Function(String?)? validator;
 
-  static const _gold   = Color(0xFFD4891A);
-  static const _cream  = Color(0xFFF5E6C8);
-  static const _muted  = Color(0xFFA07850);
-  static const _bgDeep = Color(0xFF0D0401);
-  static const _border = Color(0xFF3D1A0D);
-
   @override
   Widget build(BuildContext context) {
     return TextFormField(
       controller:   controller,
       keyboardType: keyboardType,
       obscureText:  obscureText,
-      style: const TextStyle(color: _cream, fontSize: 14),
-      cursorColor: _gold,
+      style: const TextStyle(color: _kTextDark, fontSize: 14),
+      cursorColor: _kGold,
       validator: validator,
       decoration: InputDecoration(
         labelText:          label,
-        labelStyle:         const TextStyle(color: _muted, fontSize: 13),
-        floatingLabelStyle: const TextStyle(color: _gold, fontSize: 12),
-        prefixIcon:  Icon(icon, color: _muted, size: 20),
+        labelStyle:         const TextStyle(color: _kTextMid, fontSize: 13),
+        floatingLabelStyle: const TextStyle(color: _kGold, fontSize: 12),
+        prefixIcon:  Icon(icon, color: _kTextMid, size: 20),
         suffixIcon:  suffixIcon,
         filled:      true,
-        fillColor:   _bgDeep.withValues(alpha: 0.7),
+        fillColor:   _kFieldFill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _border, width: 1),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _gold, width: 1.5),
+          borderSide: const BorderSide(color: _kGold, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFC0392B), width: 1),
+          borderSide: const BorderSide(color: _kErrorCol),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFC0392B), width: 1.5),
+          borderSide: const BorderSide(color: _kErrorCol, width: 1.5),
         ),
-        errorStyle: const TextStyle(color: Color(0xFFC0392B), fontSize: 11),
+        errorStyle: const TextStyle(color: _kErrorCol, fontSize: 11),
       ),
     );
   }
 }
 
-// ── Phone field with world country-code picker ─────────────
-class _KumbhPhoneField extends StatelessWidget {
-  const _KumbhPhoneField({required this.controller});
+// ─── Phone field with world country-code picker ────────────────────────────
+class _AuthPhoneField extends StatelessWidget {
+  const _AuthPhoneField({required this.controller});
 
   final TextEditingController controller;
-
-  static const _gold   = Color(0xFFD4891A);
-  static const _cream  = Color(0xFFF5E6C8);
-  static const _muted  = Color(0xFFA07850);
-  static const _bgDeep = Color(0xFF0D0401);
-  static const _border = Color(0xFF3D1A0D);
 
   @override
   Widget build(BuildContext context) {
     return IntlPhoneField(
-      style: const TextStyle(color: _cream, fontSize: 14),
-      cursorColor: _gold,
-      dropdownTextStyle: const TextStyle(color: _cream, fontSize: 14),
+      style: const TextStyle(color: _kTextDark, fontSize: 14),
+      cursorColor: _kGold,
+      dropdownTextStyle: const TextStyle(color: _kTextDark, fontSize: 14),
       dropdownIconPosition: IconPosition.trailing,
-      dropdownIcon: const Icon(Icons.arrow_drop_down, color: _muted),
+      dropdownIcon: const Icon(Icons.arrow_drop_down, color: _kTextMid),
       initialCountryCode: 'IN',
       disableLengthCheck: true,
       flagsButtonPadding: const EdgeInsets.only(left: 12),
       decoration: InputDecoration(
         labelText:          'Phone Number',
-        labelStyle:         const TextStyle(color: _muted, fontSize: 13),
-        floatingLabelStyle: const TextStyle(color: _gold, fontSize: 12),
+        labelStyle:         const TextStyle(color: _kTextMid, fontSize: 13),
+        floatingLabelStyle: const TextStyle(color: _kGold, fontSize: 12),
         filled:      true,
-        fillColor:   _bgDeep.withValues(alpha: 0.7),
+        fillColor:   _kFieldFill,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _border, width: 1),
+          borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: _gold, width: 1.5),
+          borderSide: const BorderSide(color: _kGold, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFC0392B), width: 1),
+          borderSide: const BorderSide(color: _kErrorCol),
         ),
         focusedErrorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFFC0392B), width: 1.5),
+          borderSide: const BorderSide(color: _kErrorCol, width: 1.5),
         ),
-        errorStyle: const TextStyle(color: Color(0xFFC0392B), fontSize: 11),
+        errorStyle: const TextStyle(color: _kErrorCol, fontSize: 11),
       ),
       dropdownDecoration: BoxDecoration(
         borderRadius: BorderRadius.circular(8),
-        color: _bgDeep,
+        color: _kFieldFill,
       ),
       onChanged: (phone) => controller.text = phone.completeNumber,
       validator: (phone) {
@@ -531,51 +491,6 @@ class _KumbhPhoneField extends StatelessWidget {
         if (phone.number.trim().length < 6) return 'Enter a valid phone number';
         return null;
       },
-    );
-  }
-}
-
-// ── Register button ───────────────────────────────────────
-class _RegisterButton extends StatelessWidget {
-  const _RegisterButton({required this.loading, required this.onPressed});
-
-  final bool          loading;
-  final VoidCallback  onPressed;
-
-  static const _maroon = Color(0xFF7A1F0A);
-  static const _gold   = Color(0xFFD4891A);
-  static const _cream  = Color(0xFFF5E6C8);
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: double.infinity,
-      height: 52,
-      child: ElevatedButton(
-        onPressed: loading ? null : onPressed,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: _maroon,
-          disabledBackgroundColor: _maroon.withValues(alpha: 0.5),
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(26),
-            side: BorderSide(color: _gold.withValues(alpha: 0.5), width: 1),
-          ),
-        ),
-        child: loading
-            ? const SizedBox(
-                width: 22, height: 22,
-                child: CircularProgressIndicator(color: _cream, strokeWidth: 2))
-            : const Text(
-                'Create Account',
-                style: TextStyle(
-                  color: _cream,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w600,
-                  letterSpacing: 0.4,
-                ),
-              ),
-      ),
     );
   }
 }

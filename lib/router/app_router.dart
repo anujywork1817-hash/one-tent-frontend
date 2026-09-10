@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import '../core/navigation/back_navigation.dart';
 import '../providers/providers.dart';
 import '../data/models/models.dart';
 import '../screens/splash/splash_screen.dart';
@@ -21,16 +22,32 @@ import '../screens/profile/edit_profile_screen.dart';   // ← new
 import '../screens/support/help_support_screen.dart';
 import '../screens/support/ai_chat_screen.dart';
 import '../screens/support/review_screen.dart';
+import '../screens/support/rate_app_screen.dart';
 import '../screens/wishlist/wishlist_screen.dart';
 import '../screens/about/kumbh_history_screen.dart';
 import '../screens/events/kumbh_calendar_screen.dart';
 import '../screens/offers/offers_screen.dart';
 
+/// The one page key shared by all five bottom-nav destinations. Because the
+/// key is identical, GoRouter treats `/home`, `/search`, `/my-bookings`,
+/// `/news` and `/profile` as the *same* page — switching between them just
+/// rebuilds [MainScaffold] with a new `initialIndex` (an instant tab swap,
+/// no transition, all tab states kept alive) instead of pushing a new route.
+/// It also means a `go('/home')` from anywhere lands on this same shell and
+/// resets it to the Home tab.
+const ValueKey<String> _shellPageKey = ValueKey('app-shell');
+
 /// A subtle fade + rise used for every pushed screen, so navigation feels
 /// like one connected motion instead of a hard cut. 220ms is fast enough to
 /// never feel like it's in the way.
-CustomTransitionPage<void> _page(Widget child) => CustomTransitionPage(
-      child: child,
+///
+/// Every screen is wrapped in [AppBackScope] so the Android system back
+/// button / edge-swipe always routes to Home first (and, on Home, through
+/// the tap-again-to-exit gate) rather than closing the app.
+CustomTransitionPage<void> _page(Widget child, {LocalKey? pageKey}) =>
+    CustomTransitionPage(
+      key: pageKey,
+      child: AppBackScope(child: child),
       transitionDuration: const Duration(milliseconds: 220),
       reverseTransitionDuration: const Duration(milliseconds: 180),
       transitionsBuilder: (_, animation, __, child) {
@@ -83,26 +100,38 @@ class AppRouter {
     },
     routes: [
       GoRoute(path: '/',        redirect: (_, __) => '/splash'),
-      GoRoute(path: '/splash',  builder: (_, __) => const SplashScreen()),
-      GoRoute(path: '/onboarding', builder: (_, __) => const OnboardingScreen()),
-      GoRoute(path: '/login',   builder: (_, __) => const LoginScreen()),
-      GoRoute(path: '/register', builder: (_, __) => const RegisterScreen()),
+      GoRoute(path: '/splash',
+          builder: (_, __) => const AppBackScope(child: SplashScreen())),
+      GoRoute(path: '/onboarding',
+          builder: (_, __) => const AppBackScope(child: OnboardingScreen())),
+      GoRoute(path: '/login',
+          builder: (_, __) => const AppBackScope(child: LoginScreen())),
+      GoRoute(path: '/register',
+          builder: (_, __) => const AppBackScope(child: RegisterScreen())),
       GoRoute(path: '/forgot-password',
-          builder: (_, __) => const ForgotPasswordScreen()),
+          builder: (_, __) =>
+              const AppBackScope(child: ForgotPasswordScreen())),
       GoRoute(path: '/verify-email',
-          builder: (_, __) => const VerifyEmailScreen()),
+          builder: (_, __) => const AppBackScope(child: VerifyEmailScreen())),
 
       // ── Main shell with bottom nav ──────────────────────
+      // All five share _shellPageKey, so switching tabs (and any go('/home'))
+      // just re-parameterises this one page instead of stacking routes.
       GoRoute(path: '/home',
-          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 0))),
+          pageBuilder: (_, __) => _page(
+              const MainScaffold(initialIndex: 0), pageKey: _shellPageKey)),
       GoRoute(path: '/search',
-          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 1))),
+          pageBuilder: (_, __) => _page(
+              const MainScaffold(initialIndex: 1), pageKey: _shellPageKey)),
       GoRoute(path: '/my-bookings',
-          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 2))),
+          pageBuilder: (_, __) => _page(
+              const MainScaffold(initialIndex: 2), pageKey: _shellPageKey)),
       GoRoute(path: '/news',
-          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 3))),
+          pageBuilder: (_, __) => _page(
+              const MainScaffold(initialIndex: 3), pageKey: _shellPageKey)),
       GoRoute(path: '/profile',
-          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 4))),
+          pageBuilder: (_, __) => _page(
+              const MainScaffold(initialIndex: 4), pageKey: _shellPageKey)),
 
       // ── Detail screens ──────────────────────────────────
       GoRoute(
@@ -196,6 +225,10 @@ class AppRouter {
             tentName: extra?['tentName'] as String? ?? 'Your stay',
           ));
         },
+      ),
+      GoRoute(
+        path: '/rate-app',
+        pageBuilder: (_, __) => _page(const RateAppScreen()),
       ),
       GoRoute(
         path: '/wishlist',

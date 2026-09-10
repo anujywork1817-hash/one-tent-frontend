@@ -10,6 +10,7 @@
         android:label="One Tent"
         android:name="${applicationName}"
         android:usesCleartextTraffic="true"
+        android:enableOnBackInvokedCallback="true"
         android:icon="@mipmap/ic_launcher">
         <activity
             android:name=".MainActivity"
@@ -55,6 +56,17 @@
         <intent>
             <action android:name="android.intent.action.SENDTO"/>
             <data android:scheme="mailto"/>
+        </intent>
+        <!-- So the Play Store rating deep link (market://) and its https
+             fallback actually resolve on Android 11+, where an app can't see
+             other installed apps unless it declares it needs to. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="market"/>
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="https"/>
         </intent>
     </queries>
 

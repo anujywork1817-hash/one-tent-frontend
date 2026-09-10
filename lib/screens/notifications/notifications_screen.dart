@@ -8,8 +8,7 @@ import '../../providers/providers.dart';
 // ─── One Tent Design Tokens ───────────────────────────────────────────────
 const Color _kMaroon    = Color(0xFF4A1000);
 const Color _kGold      = Color(0xFFD4891A);
-const Color _kCream     = Color(0xFFF5E6C8);
-const Color _kBodyBg    = Color(0xFFF2EAE0);
+const Color _kBodyBg    = Color(0xFFFFFFFF);
 const Color _kCardBg    = Color(0xFFFFFFFF);
 const Color _kCardUnread= Color(0xFFFFF8F0); // warm tint for unread
 const Color _kTextDark  = Color(0xFF2C1A0E);
@@ -164,7 +163,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 }
 
-// ── Dark Maroon Hero Header ────────────────────────────────────────────────────
+// ── Header — same plain white chrome as every other screen ─────────────────
 class _NotifHeader extends StatelessWidget {
   final int unreadCount;
   final VoidCallback? onMarkAll;
@@ -175,25 +174,18 @@ class _NotifHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: _kMaroon,
-        borderRadius:
-            BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-              color: Color(0x33000000),
-              blurRadius: 12,
-              offset: Offset(0, 4)),
-        ],
+        color: _kCardBg,
+        border: Border(bottom: BorderSide(color: _kDivider)),
       ),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(4, 8, 16, 12),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new,
-                    color: _kCream, size: 20),
+                icon: const Icon(Icons.chevron_left,
+                    color: _kTextDark, size: 28),
                 onPressed: () => context.pop(),
               ),
               Expanded(
@@ -203,24 +195,23 @@ class _NotifHeader extends StatelessWidget {
                     const Text(
                       'Notifications',
                       style: TextStyle(
-                        color: _kCream,
-                        fontWeight: FontWeight.bold,
+                        color: _kTextDark,
+                        fontWeight: FontWeight.w700,
                         fontSize: 18,
-                        letterSpacing: 0.3,
                       ),
                     ),
                     if (unreadCount > 0)
                       Text(
                         '$unreadCount unread',
-                        style: TextStyle(
-                          color: _kGold.withValues(alpha: 0.9),
+                        style: const TextStyle(
+                          color: _kGold,
                           fontSize: 12,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                   ],
                 ),
               ),
-              // Mark all read button
               if (onMarkAll != null)
                 GestureDetector(
                   onTap: onMarkAll,
@@ -228,10 +219,8 @@ class _NotifHeader extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(
                         horizontal: 12, vertical: 7),
                     decoration: BoxDecoration(
-                      color: _kGold.withValues(alpha: 0.15),
+                      color: _kGold.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(8),
-                      border: Border.all(
-                          color: _kGold.withValues(alpha: 0.45)),
                     ),
                     child: const Text(
                       'Mark all read',
@@ -242,18 +231,6 @@ class _NotifHeader extends StatelessWidget {
                       ),
                     ),
                   ),
-                )
-              else
-                // Gold bell icon badge
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: _kGold, width: 1.5),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: const Icon(Icons.notifications_outlined,
-                      color: _kGold, size: 18),
                 ),
             ],
           ),
@@ -284,17 +261,11 @@ class _NotifCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: n.isRead ? _kCardBg : _kCardUnread,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(
-          color: n.isRead
-              ? _kDivider
-              : _kGold.withValues(alpha: 0.3),
-          width: n.isRead ? 1 : 1.5,
-        ),
         boxShadow: [
           BoxShadow(
-            color: _kMaroon.withValues(alpha: n.isRead ? 0.04 : 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 3),
+            color: _kMaroon.withValues(alpha: n.isRead ? 0.04 : 0.07),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -313,8 +284,6 @@ class _NotifCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: color.withValues(alpha: 0.25)),
                   ),
                   child: Icon(icon, color: color, size: 20),
                 ),
@@ -383,8 +352,6 @@ class _NotifCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: _kGold.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(4),
-                        border: Border.all(
-                            color: _kGold.withValues(alpha: 0.3)),
                       ),
                       child: const Text(
                         'NEW',
@@ -421,10 +388,8 @@ class _EmptyState extends StatelessWidget {
             width: 88,
             height: 88,
             decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.08),
+              color: _kGold.withValues(alpha: 0.1),
               shape: BoxShape.circle,
-              border: Border.all(
-                  color: _kGold.withValues(alpha: 0.25), width: 1.5),
             ),
             child: const Icon(Icons.notifications_none_rounded,
                 size: 40, color: _kGold),
@@ -465,10 +430,8 @@ class _ErrorState extends StatelessWidget {
               width: 72,
               height: 72,
               decoration: BoxDecoration(
-                color: _kRed.withValues(alpha: 0.08),
+                color: _kRed.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-                border: Border.all(
-                    color: _kRed.withValues(alpha: 0.3)),
               ),
               child:
                   const Icon(Icons.error_outline, size: 36, color: _kRed),
@@ -485,14 +448,12 @@ class _ErrorState extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(
                     horizontal: 28, vertical: 12),
                 decoration: BoxDecoration(
-                  color: _kMaroon,
-                  borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: _kGold.withValues(alpha: 0.6)),
+                  color: _kGold,
+                  borderRadius: BorderRadius.circular(12),
                 ),
                 child: const Text('Retry',
                     style: TextStyle(
-                        color: _kGold,
+                        color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 14)),
               ),

@@ -153,6 +153,22 @@ class TentRepository {
     return list.map((e) => CapsuleTent.fromJson(e['tent'])).toList();
   }
 
+  /// Real per-day occupancy for every tent of the same type as [tentId], for
+  /// the given calendar [month] ("YYYY-MM") — what the booking calendar
+  /// colors green/yellow/red against, instead of guessing.
+  Future<Map<String, DayAvailability>> dayAvailability({
+    required String tentId,
+    required String month,
+  }) async {
+    final res = await _api.dio.get('/tents/$tentId/day-availability',
+        queryParameters: {'month': month});
+    final list = res.data['data'] as List? ?? [];
+    return {
+      for (final e in list)
+        (e['date'] as String): DayAvailability.fromJson(e as Map<String, dynamic>),
+    };
+  }
+
   Future<TentBooking> createBooking({
     required String tentId,
     required String checkInDate,
@@ -162,6 +178,9 @@ class TentRepository {
     List<AdditionalGuest> additionalGuests = const [],
     String currency = 'INR',
     int roomCount = 1,
+    String? couponCode,
+    int childrenUnder5 = 0,
+    int childrenAbove5 = 0,
   }) async {
     final res = await _api.dio.post('/bookings', data: {
       'tent_id': tentId,
@@ -172,8 +191,35 @@ class TentRepository {
       'additional_guests': additionalGuests.map((g) => g.toJson()).toList(),
       'currency': currency,
       'room_count': roomCount,
+      if (couponCode != null && couponCode.isNotEmpty) 'coupon_code': couponCode,
+      'children_under5': childrenUnder5,
+      'children_above5': childrenAbove5,
     });
     return TentBooking.fromJson(res.data['data']);
+  }
+
+  /// A few currently-usable coupon codes, for a "try one of these" strip —
+  /// never fabricated; empty if none are active right now.
+  Future<List<CouponPreview>> activeCoupons() async {
+    final res = await _api.dio.get('/coupons');
+    final list = res.data['data'] as List? ?? [];
+    return list
+        .map((e) => CouponPreview(
+              valid: true,
+              code: e['code'] as String?,
+              discountType: e['discount_type'] as String?,
+              discountValue: (e['discount_value'] as num?)?.toDouble() ?? 0,
+            ))
+        .toList();
+  }
+
+  /// Checks a coupon code against the server — the same check happens again,
+  /// authoritatively, when the booking is actually created; this is just so
+  /// the guest sees whether it's valid before they commit to it.
+  Future<CouponPreview> validateCoupon(String code) async {
+    final res = await _api.dio
+        .get('/coupons/validate', queryParameters: {'code': code});
+    return CouponPreview.fromJson(res.data['data']);
   }
 
   // ── Multi-currency preview ──────────────────────────────────────────────

@@ -69,6 +69,9 @@ class CapsuleTent {
   final String description;
   final int capacity;
   final String? imageUrl;
+  /// Every photo the admin uploaded for this tent, in order — imageUrl is
+  /// just imageUrls.first, kept for the many call sites that only show one.
+  final List<String> imageUrls;
   final bool isAvailable;
   final String locationStr;
 
@@ -125,6 +128,7 @@ class CapsuleTent {
     required this.description,
     required this.capacity,
     this.imageUrl,
+    this.imageUrls = const [],
     required this.isAvailable,
     required this.locationStr,
     required this.price1Day,
@@ -163,6 +167,12 @@ class CapsuleTent {
           (j['image_urls'] is List && (j['image_urls'] as List).isNotEmpty)
               ? j['image_urls'][0] as String
               : j['image_url'],
+      imageUrls: j['image_urls'] is List
+          ? List<String>.from(
+              (j['image_urls'] as List).where((u) => u is String && u.isNotEmpty))
+          : (j['image_url'] != null && (j['image_url'] as String).isNotEmpty
+              ? [j['image_url'] as String]
+              : const []),
       isAvailable: j['is_available'] ?? j['is_active'] ?? true,
       locationStr: j['location'] ?? 'Nashik Kumbh Mela',
       price1Day: isNewBackend
@@ -217,6 +227,64 @@ class AdditionalGuest {
   Map<String, dynamic> toJson() => {'name': name, 'phone': phone};
 }
 
+/// Real per-day occupancy for one date, across every tent of a given type —
+/// what the booking calendar colors green ("available"), yellow ("limited",
+/// a few rooms of this type left), or red ("booked", none left).
+class DayAvailability {
+  final int total;
+  final int booked;
+  final int free;
+  final String status; // "available" | "limited" | "booked"
+
+  const DayAvailability({
+    required this.total,
+    required this.booked,
+    required this.free,
+    required this.status,
+  });
+
+  factory DayAvailability.fromJson(Map<String, dynamic> j) => DayAvailability(
+        total: (j['total'] as num?)?.toInt() ?? 0,
+        booked: (j['booked'] as num?)?.toInt() ?? 0,
+        free: (j['free'] as num?)?.toInt() ?? 0,
+        status: j['status'] as String? ?? 'available',
+      );
+}
+
+/// Result of checking a coupon code with the server before booking —
+/// preview only, re-validated for real when the booking is created.
+class CouponPreview {
+  final bool valid;
+  final String? code;
+  final String? discountType; // "percent" | "flat"
+  final double discountValue;
+  final String message;
+
+  const CouponPreview({
+    required this.valid,
+    this.code,
+    this.discountType,
+    this.discountValue = 0,
+    this.message = '',
+  });
+
+  factory CouponPreview.fromJson(Map<String, dynamic> j) => CouponPreview(
+        valid: j['valid'] as bool? ?? false,
+        code: j['code'] as String?,
+        discountType: j['discount_type'] as String?,
+        discountValue: (j['discount_value'] as num?)?.toDouble() ?? 0,
+        message: j['message'] as String? ?? '',
+      );
+
+  /// This coupon's discount off [preTaxAmount] — mirrors the server's own
+  /// Discount() so the preview matches what booking creation will compute.
+  double discountFor(double preTaxAmount) {
+    if (!valid) return 0;
+    if (discountType == 'percent') return preTaxAmount * discountValue / 100;
+    return discountValue > preTaxAmount ? preTaxAmount : discountValue;
+  }
+}
+
 // ─── TentBooking ──────────────────────────────────────────────────────────────
 
 class TentBooking {
@@ -250,6 +318,14 @@ class TentBooking {
   final String? groupId;
   final int roomCount;
   final double? groupTotalAmount;
+  final String? couponCode;
+  final double discountAmount;
+  // Children traveling with the party — under-5s are free (kept only for
+  // the record), above-5s each added childFee to the total once, not per
+  // night and not split across rooms. See backend migration 025.
+  final int childrenUnder5;
+  final int childrenAbove5;
+  final double childFee;
 
   const TentBooking({
     required this.id,
@@ -275,6 +351,11 @@ class TentBooking {
     this.groupId,
     this.roomCount = 1,
     this.groupTotalAmount,
+    this.couponCode,
+    this.discountAmount = 0,
+    this.childrenUnder5 = 0,
+    this.childrenAbove5 = 0,
+    this.childFee = 0,
   });
 
   factory TentBooking.fromJson(Map<String, dynamic> j) {
@@ -317,6 +398,11 @@ class TentBooking {
       groupTotalAmount: j['group_total_amount'] != null
           ? (j['group_total_amount'] as num).toDouble()
           : null,
+      couponCode: j['coupon_code']?.toString(),
+      discountAmount: (j['discount_amount'] ?? 0).toDouble(),
+      childrenUnder5: (j['children_under5'] as num?)?.toInt() ?? 0,
+      childrenAbove5: (j['children_above5'] as num?)?.toInt() ?? 0,
+      childFee: (j['child_fee'] ?? 0).toDouble(),
     );
   }
 
@@ -348,6 +434,11 @@ class TentBooking {
         groupId: groupId,
         roomCount: roomCount,
         groupTotalAmount: groupTotalAmount,
+        couponCode: couponCode,
+        discountAmount: discountAmount,
+        childrenUnder5: childrenUnder5,
+        childrenAbove5: childrenAbove5,
+        childFee: childFee,
       );
 
   String get bookingRef =>

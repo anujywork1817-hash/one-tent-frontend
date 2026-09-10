@@ -4,8 +4,8 @@ import 'package:provider/provider.dart';
 
 import '../../providers/providers.dart';
 
-const _kHeroBg      = Color(0xFF3D0F05);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kHeroBg      = Color(0xFF4A1000);
+const _kBodyBg      = Color(0xFFFFFFFF);
 const _kCardBg      = Color(0xFFFFFFFF);
 const _kBorderLight = Color(0xFFDDD0C4);
 const _kGold        = Color(0xFFD4891A);
@@ -91,37 +91,20 @@ class _AiChatScreenState extends State<AiChatScreen> {
     return Scaffold(
       backgroundColor: _kBodyBg,
       appBar: AppBar(
-        backgroundColor: _kHeroBg,
+        backgroundColor: _kCardBg,
+        surfaceTintColor: _kCardBg,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _kGold.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _kGold.withValues(alpha: 0.40)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: _kCream, size: 20),
-            onPressed: () => context.pop(),
-          ),
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
+          onPressed: () => context.pop(),
         ),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: const Icon(Icons.smart_toy_outlined, color: _kGold, size: 16),
-          ),
-          const SizedBox(width: 10),
-          const Text('AI Support',
-              style: TextStyle(
-                  color: _kCream, fontWeight: FontWeight.w600, fontSize: 17)),
-        ]),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        title: const Text('AI Support',
+            style: TextStyle(
+                color: _kTextDark, fontWeight: FontWeight.w700, fontSize: 17)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _kBorderLight),
         ),
       ),
       body: Column(

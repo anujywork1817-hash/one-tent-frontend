@@ -395,7 +395,16 @@ class AuthProvider extends ChangeNotifier {
           passportUrl: result['passport_url'] as String?,
           passportStatus: (result['passport_status'] as String?) ?? 'uploaded',
           profileImageUrl: _visitor!.profileImageUrl,
+          // Must be carried over — leaving it off defaults it to false, which
+          // silently "un-verifies" the guest and bounces them to the
+          // verify-email screen right after a passport upload.
+          emailVerified: _visitor!.emailVerified,
         );
+        // Keep what's persisted to storage in step with the in-memory
+        // visitor, so a relaunch doesn't restore the pre-upload record.
+        await _storage.write(
+            key: AppConstants.visitorKey,
+            value: jsonEncode(_visitorToMap(_visitor)));
         notifyListeners();
       }
       return true;
@@ -517,6 +526,11 @@ class AuthProvider extends ChangeNotifier {
           pick(base['passport_number'], serverData['passport_number']) ?? '',
       'country': pick(base['country'], serverData['country']) ?? '',
       'is_verified': serverData['is_verified'] ?? base['is_verified'] ?? false,
+      // Carry email verification through a profile edit — the PATCH response
+      // doesn't echo it, and dropping it here would default it to false and
+      // re-gate an already-verified guest at the verify-email screen.
+      'email_verified':
+          serverData['email_verified'] ?? base['email_verified'] ?? false,
       'passport_url': pick(serverData['passport_url'], base['passport_url']),
       'passport_status':
           pick(serverData['passport_status'], base['passport_status']) ??
@@ -566,6 +580,27 @@ class TentProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Preview-checks a coupon code — see TentRepository.validateCoupon.
+  Future<CouponPreview> validateCoupon(String code) => _tentRepo.validateCoupon(code);
+
+  /// A few currently-usable coupon codes to suggest — see
+  /// TentRepository.activeCoupons.
+  Future<List<CouponPreview>> activeCoupons() => _tentRepo.activeCoupons();
+
+  /// Real per-day green/yellow/red occupancy for the booking calendar —
+  /// see TentRepository.dayAvailability. Empty map on failure so the
+  /// calendar just falls back to its default look rather than breaking.
+  Future<Map<String, DayAvailability>> dayAvailability({
+    required String tentId,
+    required String month,
+  }) async {
+    try {
+      return await _tentRepo.dayAvailability(tentId: tentId, month: month);
+    } catch (_) {
+      return {};
+    }
+  }
+
   Future<TentBooking?> createBooking({
     required String tentId,
     required String checkInDate,
@@ -575,6 +610,9 @@ class TentProvider extends ChangeNotifier {
     List<AdditionalGuest> additionalGuests = const [],
     String currency = 'INR',
     int roomCount = 1,
+    String? couponCode,
+    int childrenUnder5 = 0,
+    int childrenAbove5 = 0,
   }) async {
     _error = null;
     notifyListeners();
@@ -594,6 +632,9 @@ class TentProvider extends ChangeNotifier {
         additionalGuests: additionalGuests,
         currency: currency,
         roomCount: roomCount,
+        couponCode: couponCode,
+        childrenUnder5: childrenUnder5,
+        childrenAbove5: childrenAbove5,
       );
     } catch (e) {
       _error = dioErrorMessage(e);

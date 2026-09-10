@@ -11,7 +11,7 @@ import '../../providers/providers.dart';
 const Color _kMaroon     = Color(0xFF4A1000);
 const Color _kGold       = Color(0xFFD4891A);
 const Color _kGoldLight  = Color(0xFFE8A830);
-const Color _kCream      = Color(0xFFF2EAE0);
+const Color _kCream      = Color(0xFFFFFFFF);
 // ─────────────────────────────────────────────────────────────────────────────
 
 class SplashScreen extends StatefulWidget {

@@ -8,16 +8,13 @@ import '../../widgets/tent_card.dart';
 
 // ─── One Tent Design Tokens ───────────────────────────────────────────────
 const _kHeroBg = Color(0xFF4A1000);
-const _kBodyBg = Color(0xFFF2EAE0);
+const _kBodyBg = Color(0xFFFFFFFF);
 const _kCardBg = Color(0xFFFFFFFF);
 const _kGold = Color(0xFFD4891A);
-const _kGoldLight = Color(0xFFE8A93A);
 const _kBorderLight = Color(0xFFDDD0C4);
 const _kTextDark = Color(0xFF2D0F05);
 const _kTextMid = Color(0xFF7A4A30);
 const _kTextLight = Color(0xFFA07050);
-const _kCream = Color(0xFFF5E6C8);
-const _kMaroon = Color(0xFF5C1A08);
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── Filtering (pure, unit-tested in test/search_filter_test.dart) ───────────
@@ -175,46 +172,30 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Scaffold(
       backgroundColor: _kBodyBg,
-      // ── Hero App Bar ──────────────────────────────────────────────────
+      // ── App bar — same plain white chrome as every other screen ────────
       appBar: AppBar(
-        backgroundColor: _kHeroBg,
+        backgroundColor: _kCardBg,
+        surfaceTintColor: _kCardBg,
         elevation: 0,
+        scrolledUnderElevation: 0,
         // Search is always a bottom-nav tab, never a screen pushed on top of
         // something else — there is nothing to pop back to, so a back arrow
         // here used to sit dead on-screen no matter how hard it was tapped.
         automaticallyImplyLeading: false,
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: const Icon(Icons.search, color: _kGold, size: 16),
-          ),
-          const SizedBox(width: 10),
-          const Text('Search Tents',
-              style: TextStyle(
-                  color: _kCream, fontSize: 17, fontWeight: FontWeight.w600)),
-        ]),
+        title: const Text('Search Tents',
+            style: TextStyle(
+                color: _kTextDark, fontSize: 17, fontWeight: FontWeight.w700)),
         actions: [
-          Container(
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.tune, color: _kGold, size: 20),
-              onPressed: _showFilters,
-              tooltip: 'Filters',
-            ),
+          IconButton(
+            icon: const Icon(Icons.tune, color: _kTextDark, size: 22),
+            onPressed: _showFilters,
+            tooltip: 'Filters',
           ),
+          const SizedBox(width: 4),
         ],
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _kBorderLight),
         ),
       ),
 
@@ -225,20 +206,13 @@ class _SearchScreenState extends State<SearchScreen> {
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
             child: Container(
               decoration: BoxDecoration(
-                color: _kHeroBg,
+                color: const Color(0xFFF3EEE7),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _kGold.withValues(alpha: 0.25)),
-                boxShadow: [
-                  BoxShadow(
-                      color: _kMaroon.withValues(alpha: 0.20),
-                      blurRadius: 8,
-                      offset: const Offset(0, 3)),
-                ],
               ),
               child: TextField(
                 controller: _searchCtrl,
                 onChanged: (_) => setState(() {}),
-                style: const TextStyle(fontSize: 14, color: _kCream),
+                style: const TextStyle(fontSize: 14, color: _kTextDark),
                 cursorColor: _kGold,
                 decoration: InputDecoration(
                   // The global theme sets filled:true with a near-black
@@ -248,8 +222,9 @@ class _SearchScreenState extends State<SearchScreen> {
                   filled: false,
                   hintText: 'Search by name, location, type...',
                   hintStyle: TextStyle(
-                      color: _kTextLight.withValues(alpha: 0.7), fontSize: 14),
-                  prefixIcon: const Icon(Icons.search, color: _kGold, size: 20),
+                      color: _kTextLight.withValues(alpha: 0.9), fontSize: 14),
+                  prefixIcon:
+                      const Icon(Icons.search, color: _kTextMid, size: 20),
                   // IconButton rather than a bare GestureDetector: it fills
                   // the suffix box, so taps landing just off the 20px glyph
                   // still register.
@@ -375,7 +350,6 @@ class _SearchScreenState extends State<SearchScreen> {
                   decoration: BoxDecoration(
                     color: _kGold.withValues(alpha: 0.10),
                     shape: BoxShape.circle,
-                    border: Border.all(color: _kGold.withValues(alpha: 0.30)),
                   ),
                   child: const Icon(Icons.search_off, size: 34, color: _kGold),
                 ),
@@ -407,8 +381,7 @@ class _SearchScreenState extends State<SearchScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
         decoration: BoxDecoration(
             color: _kGold.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: _kGold.withValues(alpha: 0.40))),
+            borderRadius: BorderRadius.circular(20)),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Text(label,
               style: const TextStyle(
@@ -587,17 +560,14 @@ class _FilterSheetState extends State<_FilterSheet> {
                   Navigator.pop(context);
                 },
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: _kHeroBg,
+                    backgroundColor: _kGold,
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(26),
-                      side: BorderSide(color: _kGold.withValues(alpha: 0.55)),
+                      borderRadius: BorderRadius.circular(16),
                     )),
                 child: const Text('Apply Filters',
-                    style: TextStyle(
-                        color: _kCream,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 15)),
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
               ),
             ),
           ]),
@@ -694,9 +664,8 @@ class _ScarcityBanner extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.10),
+          color: color.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.35)),
         ),
         child: Row(children: [
           Icon(icon, size: 18, color: color),

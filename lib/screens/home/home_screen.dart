@@ -13,7 +13,7 @@ import '../../widgets/handcrafted.dart';
 // ── Design tokens ─────────────────────────────────────────────────────────────
 const _kBgDeep = Color(0xFF0D0401);
 const _kHeroBg = Color(0xFF2A0A02);
-const _kBodyBg = Color(0xFFF2EAE0);
+const _kBodyBg = Color(0xFFFFFFFF);
 const _kCardBg = Color(0xFFFFFFFF);
 const _kGold = Color(0xFFD4891A);
 const _kGoldLight = Color(0xFFE8A93A);
@@ -345,30 +345,27 @@ class _HomeScreenState extends State<HomeScreen> {
                                   fontSize: 13),
                             ),
                             const SizedBox(height: 14),
-                            Tilt(
-                              degrees: -1.6,
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: _kGold.withValues(alpha: 0.18),
-                                  borderRadius: BorderRadius.circular(20),
-                                  border: Border.all(
-                                      color: _kGold.withValues(alpha: 0.45)),
-                                ),
-                                child: const Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(Icons.location_on,
-                                        color: _kGold, size: 13),
-                                    SizedBox(width: 4),
-                                    Text('Nashik, Kumbh',
-                                        style: TextStyle(
-                                            color: _kCream,
-                                            fontSize: 12,
-                                            fontWeight: FontWeight.w600)),
-                                  ],
-                                ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 6),
+                              decoration: BoxDecoration(
+                                color: _kGold.withValues(alpha: 0.18),
+                                borderRadius: BorderRadius.circular(20),
+                                border: Border.all(
+                                    color: _kGold.withValues(alpha: 0.45)),
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.location_on,
+                                      color: _kGold, size: 13),
+                                  SizedBox(width: 4),
+                                  Text('Nashik, Kumbh',
+                                      style: TextStyle(
+                                          color: _kCream,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600)),
+                                ],
                               ),
                             ),
                           ],
@@ -457,7 +454,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     subtitle: 'Latest updates',
                     color: const Color(0xFF2E6E8C),
                     imageAsset: 'assets/images/news_banner.jpg',
-                    onTap: () => context.push('/news'),
+                    onTap: () => context.go('/news'),
                   ),
                   _ExploreBannerData(
                     label: 'Offers',
@@ -483,23 +480,11 @@ class _HomeScreenState extends State<HomeScreen> {
                         crossAxisAlignment: CrossAxisAlignment.end,
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              const Text('Popular Categories',
-                                  style: TextStyle(
-                                      fontSize: 17,
-                                      fontWeight: FontWeight.w700,
-                                      color: _kTextDark)),
-                              const SizedBox(width: 8),
-                              Tilt(
-                                degrees: -4,
-                                child: Text('pick one!',
-                                    style: AppFonts.handwritten(
-                                        fontSize: 15, color: _kGold)),
-                              ),
-                            ],
-                          ),
+                          const Text('Popular Categories',
+                              style: TextStyle(
+                                  fontSize: 17,
+                                  fontWeight: FontWeight.w700,
+                                  color: _kTextDark)),
                           GestureDetector(
                             // This used to just call _filterByType(null),
                             // which resets the home page's own category
@@ -597,7 +582,7 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 color: _kBodyBg,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 4),
-                child: const WavyDivider(color: _kBorder),
+                child: Divider(height: 1, color: _kBorder),
               ),
             ),
 
@@ -716,9 +701,9 @@ class _HomeScreenState extends State<HomeScreen> {
         highlightColor: const Color(0xFFF5E6C8),
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          height: 110,
+          height: 320,
           decoration: BoxDecoration(
-              color: Colors.white, borderRadius: BorderRadius.circular(14)),
+              color: Colors.white, borderRadius: BorderRadius.circular(20)),
         ),
       );
 }
@@ -927,7 +912,7 @@ class _PassportPromptDialog extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
         decoration: BoxDecoration(
           color: _kCardBg,
-          borderRadius: handDrawnRadius(base: 22, seed: 4),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(color: _kGold.withValues(alpha: 0.3)),
           boxShadow: [
             BoxShadow(
@@ -940,19 +925,16 @@ class _PassportPromptDialog extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Tilt(
-              degrees: -3,
-              child: Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: _kGold.withValues(alpha: 0.12),
-                  borderRadius: handDrawnRadius(base: 16, seed: 6),
-                  border: Border.all(color: _kGold.withValues(alpha: 0.4)),
-                ),
-                child:
-                    const Icon(Icons.badge_outlined, color: _kGold, size: 30),
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                color: _kGold.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: _kGold.withValues(alpha: 0.4)),
               ),
+              child:
+                  const Icon(Icons.badge_outlined, color: _kGold, size: 30),
             ),
             const SizedBox(height: 18),
             const Text(
@@ -979,7 +961,12 @@ class _PassportPromptDialog extends StatelessWidget {
                     color: _kHeroBg,
                     borderRadius: BorderRadius.circular(14),
                     border: Border.all(color: _kGold.withValues(alpha: 0.6)),
-                    boxShadow: stickerShadow(_kHeroBg.withValues(alpha: 0.3)),
+                    boxShadow: [
+                      BoxShadow(
+                          color: _kHeroBg.withValues(alpha: 0.3),
+                          blurRadius: 14,
+                          offset: const Offset(0, 6)),
+                    ],
                   ),
                   child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,

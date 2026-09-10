@@ -12,7 +12,7 @@ import '../../providers/providers.dart';
 // ─── One Tent Design Tokens ───────────────────────────────────────────────
 const _kHeroBg      = Color(0xFF4A1000);
 const _kMaroonMid   = Color(0xFF6B1A00);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kBodyBg      = Color(0xFFFFFFFF);
 const _kCardBg      = Color(0xFFFFFFFF);
 const _kGold        = Color(0xFFD4891A);
 const _kGoldLight   = Color(0xFFE8A93A);
@@ -159,7 +159,6 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: BoxDecoration(
             color: _kGold.withValues(alpha: 0.07),
-            border: Border.all(color: _kGold.withValues(alpha: 0.30)),
             borderRadius: BorderRadius.circular(12)),
         child: Row(children: [
           Container(
@@ -244,39 +243,22 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
     return Scaffold(
       backgroundColor: _kBodyBg,
 
-      // ── Hero App Bar ──────────────────────────────────────────────────
+      // ── App bar — same plain white chrome as every other screen ────────
       appBar: AppBar(
-        backgroundColor: _kHeroBg,
+        backgroundColor: _kCardBg,
+        surfaceTintColor: _kCardBg,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _kGold.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _kGold.withValues(alpha: 0.40)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: _kCream, size: 20),
-            onPressed: () => context.pop(),
-          ),
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
+          onPressed: () => context.pop(),
         ),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: const Icon(Icons.badge_outlined, color: _kGold, size: 16),
-          ),
-          const SizedBox(width: 10),
-          const Text('Passport Upload',
-              style: TextStyle(
-                  color: _kCream, fontWeight: FontWeight.w600, fontSize: 17)),
-        ]),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        title: const Text('Passport Upload',
+            style: TextStyle(
+                color: _kTextDark, fontWeight: FontWeight.w700, fontSize: 17)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _kBorderLight),
         ),
       ),
 
@@ -299,8 +281,7 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                     color: _kGold.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _kGold.withValues(alpha: 0.25))),
+                    borderRadius: BorderRadius.circular(10)),
                 child: const Row(children: [
                   Icon(Icons.phone_android, color: _kGold, size: 18),
                   SizedBox(width: 8),
@@ -320,9 +301,7 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                   color: _statusColor(_passportStatus).withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(
-                      color: _statusColor(_passportStatus).withValues(alpha: 0.30))),
+                  borderRadius: BorderRadius.circular(14)),
               child: Row(children: [
                 Container(
                   width: 42, height: 42,
@@ -370,8 +349,7 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
                     color: _kError.withValues(alpha: 0.07),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: _kError.withValues(alpha: 0.30))),
+                    borderRadius: BorderRadius.circular(12)),
                 child: Row(crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       const Icon(Icons.info_outline, color: _kError, size: 18),
@@ -467,9 +445,7 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                     color: _kSuccess.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(14),
-                    border:
-                        Border.all(color: _kSuccess.withValues(alpha: 0.30))),
+                    borderRadius: BorderRadius.circular(14)),
                 child: const Row(children: [
                   Icon(Icons.verified, color: _kSuccess, size: 22),
                   SizedBox(width: 12),
@@ -546,8 +522,6 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
                                 decoration: BoxDecoration(
                                   color: _kGold.withValues(alpha: 0.10),
                                   shape: BoxShape.circle,
-                                  border: Border.all(
-                                      color: _kGold.withValues(alpha: 0.30)),
                                 ),
                                 child: const Icon(Icons.add_photo_alternate_outlined,
                                     size: 28, color: _kGold),
@@ -616,7 +590,6 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
                     decoration: BoxDecoration(
                       color: _kGold.withValues(alpha: 0.10),
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: _kGold.withValues(alpha: 0.35)),
                     ),
                     child: const Row(mainAxisSize: MainAxisSize.min, children: [
                       Icon(Icons.refresh, size: 15, color: _kGold),
@@ -636,8 +609,7 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                     color: _kError.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _kError.withValues(alpha: 0.25))),
+                    borderRadius: BorderRadius.circular(10)),
                 child: Row(children: [
                   const Icon(Icons.error_outline, color: _kError, size: 18),
                   const SizedBox(width: 8),
@@ -656,8 +628,7 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
                     color: _kSuccess.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _kSuccess.withValues(alpha: 0.25))),
+                    borderRadius: BorderRadius.circular(10)),
                 child: const Row(children: [
                   Icon(Icons.check_circle_outline,
                       color: _kSuccess, size: 18),
@@ -675,8 +646,7 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                   color: _kGold.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: _kGold.withValues(alpha: 0.20))),
+                  borderRadius: BorderRadius.circular(14)),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -729,44 +699,41 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
                           Navigator.canPop(context) ? context.pop() : context.go('/profile'),
                       style: ElevatedButton.styleFrom(
                           backgroundColor: _kSuccess,
+                          foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(26),
+                            borderRadius: BorderRadius.circular(16),
                           )),
                       child: const Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(Icons.check_circle_outline, color: _kCream, size: 20),
+                          Icon(Icons.check_circle_outline, size: 20),
                           SizedBox(width: 8),
                           Text('Done',
                               style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: _kCream)),
+                                  fontSize: 16, fontWeight: FontWeight.w800)),
                         ],
                       ),
                     )
                   : ElevatedButton(
                       onPressed: _loading ? null : _upload,
                       style: ElevatedButton.styleFrom(
-                          backgroundColor: _kHeroBg,
-                          disabledBackgroundColor: _kBorderLight,
+                          backgroundColor: _kGold,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: _kGold.withValues(alpha: 0.4),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(26),
-                            side: BorderSide(color: _kGold.withValues(alpha: 0.55)),
+                            borderRadius: BorderRadius.circular(16),
                           )),
                       child: _loading
                           ? const SizedBox(
                               width: 20, height: 20,
                               child: CircularProgressIndicator(
-                                  color: _kGold, strokeWidth: 2))
+                                  color: Colors.white, strokeWidth: 2))
                           : const Text(
                               'Submit',
                               style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                  color: _kCream)),
+                                  fontSize: 16, fontWeight: FontWeight.w800)),
                     ),
             ),
             ], // end !_isVerified

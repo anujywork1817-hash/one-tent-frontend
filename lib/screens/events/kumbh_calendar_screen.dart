@@ -5,15 +5,14 @@ import 'package:intl/intl.dart';
 import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 
-const _kHeroBg      = Color(0xFF3D0F05);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kHeroBg      = Color(0xFF4A1000);
+const _kBodyBg      = Color(0xFFFFFFFF);
 const _kCardBg      = Color(0xFFFFFFFF);
 const _kGold        = Color(0xFFD4891A);
 const _kBorderLight = Color(0xFFDDD0C4);
 const _kTextDark    = Color(0xFF2D0F05);
 const _kTextMid     = Color(0xFF7A4A30);
 const _kTextLight   = Color(0xFFA07050);
-const _kCream       = Color(0xFFF5E6C8);
 const _kBlue        = Color(0xFF2E6E8C);
 
 class KumbhCalendarScreen extends StatefulWidget {
@@ -53,27 +52,17 @@ class _KumbhCalendarScreenState extends State<KumbhCalendarScreen> {
     return Scaffold(
       backgroundColor: _kBodyBg,
       appBar: AppBar(
-        backgroundColor: _kHeroBg,
+        backgroundColor: _kCardBg,
+        surfaceTintColor: _kCardBg,
         elevation: 0,
+        scrolledUnderElevation: 0,
         automaticallyImplyLeading: false,
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: const Icon(Icons.event_note_outlined,
-                color: _kGold, size: 16),
-          ),
-          const SizedBox(width: 10),
-          const Text('Kumbh Calendar',
-              style: TextStyle(
-                  color: _kCream, fontWeight: FontWeight.w600, fontSize: 17)),
-        ]),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        title: const Text('Kumbh Calendar',
+            style: TextStyle(
+                color: _kTextDark, fontWeight: FontWeight.w700, fontSize: 17)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _kBorderLight),
         ),
       ),
       body: _body(),
@@ -226,13 +215,12 @@ class _EventCard extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: _kCardBg,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _kBorderLight),
+          borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
                 color: _kHeroBg.withValues(alpha: 0.06),
-                blurRadius: 8,
-                offset: const Offset(0, 3)),
+                blurRadius: 14,
+                offset: const Offset(0, 5)),
           ],
         ),
         child: Row(

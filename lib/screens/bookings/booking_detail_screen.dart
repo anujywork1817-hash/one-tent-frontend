@@ -5,14 +5,11 @@ import 'package:provider/provider.dart';
 
 import '../../data/models/models.dart';
 import '../../providers/providers.dart';
-import '../../widgets/handcrafted.dart';
 
 // ─── One Tent Design Tokens ───────────────────────────────────────────────
-const Color _kBgDeep = Color(0xFF0D0401);
 const Color _kMaroon = Color(0xFF4A1000);
 const Color _kGold = Color(0xFFD4891A);
-const Color _kCream = Color(0xFFF5E6C8);
-const Color _kBodyBg = Color(0xFFF2EAE0);
+const Color _kBodyBg = Color(0xFFFFFFFF);
 const Color _kCardBg = Color(0xFFFFFFFF);
 const Color _kTextDark = Color(0xFF2C1A0E);
 const Color _kTextMuted = Color(0xFF8A6A50);
@@ -115,13 +112,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           vertical: 12, horizontal: 16),
                       decoration: BoxDecoration(
                         color: statusBg,
-                        borderRadius: handDrawnRadius(base: 12, seed: 2),
-                        border: Border.all(
-                            color: statusColor.withValues(alpha: 0.35)),
-                        boxShadow: stickerShadow(
-                            statusColor.withValues(alpha: 0.1),
-                            dx: 3,
-                            dy: 3),
+                        borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(children: [
                         Icon(
@@ -153,16 +144,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     _InfoCard(
                       seed: 1,
                       child: Row(children: [
-                        Container(
-                          padding: const EdgeInsets.all(7),
-                          decoration: BoxDecoration(
-                            color: _kMaroon,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: const Icon(Icons.confirmation_number_outlined,
-                              color: _kGold, size: 16),
-                        ),
-                        const SizedBox(width: 12),
+                        const Icon(Icons.confirmation_number_outlined,
+                            color: _kGold, size: 18),
+                        const SizedBox(width: 10),
                         Expanded(
                           child: Text(
                             booking.bookingRefStr ?? booking.id,
@@ -185,7 +169,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       seed: 2,
                       child: Column(children: [
                         _detailRow('Name', booking.tentName ?? 'N/A'),
-                        const WavyDivider(color: _kDivider),
+                        const Divider(color: _kDivider, height: 20),
                         _detailRow('Tent ID', booking.tentId),
                       ]),
                     ),
@@ -202,19 +186,19 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             checkIn != null
                                 ? fmt.format(checkIn)
                                 : booking.checkInDate),
-                        const WavyDivider(color: _kDivider),
+                        const Divider(color: _kDivider, height: 20),
                         _detailRow(
                             'Check-out',
                             checkOut != null
                                 ? fmt.format(checkOut)
                                 : booking.checkOutDate),
-                        const WavyDivider(color: _kDivider),
+                        const Divider(color: _kDivider, height: 20),
                         _detailRow('Nights', '${booking.nights}'),
                         if (booking.roomCount > 1) ...[
-                          const WavyDivider(color: _kDivider),
+                          const Divider(color: _kDivider, height: 20),
                           _detailRow('Rooms', '${booking.roomCount}'),
                         ],
-                        const WavyDivider(color: _kDivider),
+                        const Divider(color: _kDivider, height: 20),
                         _detailRow('Guests', '${booking.numGuests}'),
                       ]),
                     ),
@@ -231,7 +215,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             for (var i = 0;
                                 i < booking.additionalGuests.length;
                                 i++) ...[
-                              if (i > 0) const WavyDivider(color: _kDivider),
+                              if (i > 0) const Divider(color: _kDivider, height: 20),
                               _detailRow(
                                 booking.additionalGuests[i].name,
                                 booking.additionalGuests[i].phone,
@@ -253,15 +237,15 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           if (booking.gstRate > 0) ...[
                             _detailRow('Room Charge',
                                 '₹${booking.baseAmount.toStringAsFixed(2)}'),
-                            const WavyDivider(color: _kDivider),
+                            const Divider(color: _kDivider, height: 20),
                             _detailRow(
                                 'CGST (${booking.gstRate.toStringAsFixed(0)}%)',
                                 '₹${booking.cgstAmount.toStringAsFixed(2)}'),
-                            const WavyDivider(color: _kDivider),
+                            const Divider(color: _kDivider, height: 20),
                             _detailRow(
                                 'SGST (${booking.gstRate.toStringAsFixed(0)}%)',
                                 '₹${booking.sgstAmount.toStringAsFixed(2)}'),
-                            const WavyDivider(color: _kDivider),
+                            const Divider(color: _kDivider, height: 20),
                           ],
                           Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -269,22 +253,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                               const Text('Total Amount',
                                   style: TextStyle(
                                       color: _kTextMuted, fontSize: 13)),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                    horizontal: 12, vertical: 5),
-                                decoration: BoxDecoration(
-                                  color: _kGold.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(8),
-                                  border: Border.all(
-                                      color: _kGold.withValues(alpha: 0.4)),
-                                ),
-                                child: Text(
-                                  '₹${booking.amountDue.toStringAsFixed(0)}',
-                                  style: const TextStyle(
-                                    color: _kGold,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
+                              Text(
+                                '₹${booking.amountDue.toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  color: _kTextDark,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 18,
                                 ),
                               ),
                             ],
@@ -321,10 +295,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       Container(
                         padding: const EdgeInsets.all(14),
                         decoration: BoxDecoration(
-                          color: _kGold.withValues(alpha: 0.07),
-                          borderRadius: handDrawnRadius(base: 14, seed: 7),
-                          border:
-                              Border.all(color: _kGold.withValues(alpha: 0.22)),
+                          color: _kGold.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(14),
                         ),
                         child: GridView.count(
                           crossAxisCount: 2,
@@ -334,26 +306,12 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           crossAxisSpacing: 10,
                           childAspectRatio: 3.5,
                           children: _confirmedAmenities
-                              .asMap()
-                              .entries
-                              .map((entry) => Row(children: [
-                                    Container(
-                                      width: 28,
-                                      height: 28,
-                                      decoration: BoxDecoration(
-                                        color: _kMaroon,
-                                        borderRadius: handDrawnRadius(
-                                            base: 7, seed: entry.key),
-                                      ),
-                                      child: Icon(
-                                          entry.value['icon'] as IconData,
-                                          size: 13,
-                                          color: _kGold),
-                                    ),
-                                    const SizedBox(width: 7),
+                              .map((a) => Row(children: [
+                                    Icon(a['icon'] as IconData,
+                                        size: 16, color: _kGold),
+                                    const SizedBox(width: 8),
                                     Expanded(
-                                      child: Text(
-                                          entry.value['label'] as String,
+                                      child: Text(a['label'] as String,
                                           style: const TextStyle(
                                               fontSize: 11,
                                               color: _kTextMuted,
@@ -377,20 +335,9 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                               .map((point) => Padding(
                                     padding: const EdgeInsets.only(bottom: 10),
                                     child: Row(children: [
-                                      Container(
-                                        width: 22,
-                                        height: 22,
-                                        decoration: BoxDecoration(
-                                          color: _kGreen.withValues(alpha: 0.1),
-                                          shape: BoxShape.circle,
-                                          border: Border.all(
-                                              color: _kGreen.withValues(
-                                                  alpha: 0.3)),
-                                        ),
-                                        child: Icon(Icons.check_rounded,
-                                            size: 12, color: _kGreen),
-                                      ),
-                                      const SizedBox(width: 10),
+                                      Icon(Icons.check_circle_rounded,
+                                          size: 16, color: _kGreen),
+                                      const SizedBox(width: 8),
                                       Expanded(
                                           child: Text(point,
                                               style: const TextStyle(
@@ -404,32 +351,28 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       const SizedBox(height: 16),
 
                       // Eco note
-                      Tilt(
-                        degrees: -1.4,
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 10, horizontal: 14),
-                          decoration: BoxDecoration(
-                            color: _kGreen.withValues(alpha: 0.07),
-                            borderRadius: handDrawnRadius(base: 12, seed: 8),
-                            border: Border.all(
-                                color: _kGreen.withValues(alpha: 0.2)),
-                          ),
-                          child: Row(children: [
-                            const Icon(Icons.eco_rounded,
-                                size: 18, color: _kGreen),
-                            const SizedBox(width: 10),
-                            const Expanded(
-                              child: Text(
-                                'Solar powered · Water saving · Low waste living',
-                                style: TextStyle(
-                                    fontSize: 12,
-                                    color: _kGreen,
-                                    fontWeight: FontWeight.w500),
-                              ),
-                            ),
-                          ]),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 10, horizontal: 14),
+                        decoration: BoxDecoration(
+                          color: _kGreen.withValues(alpha: 0.06),
+                          borderRadius: BorderRadius.circular(12),
                         ),
+                        child: Row(children: [
+                          const Icon(Icons.eco_rounded,
+                              size: 18, color: _kGreen),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(
+                              'Solar powered · Water saving · Low waste living',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: _kGreen,
+                                  fontWeight: FontWeight.w500),
+                            ),
+                          ),
+                        ]),
                       ),
                       const SizedBox(height: 20),
 
@@ -448,6 +391,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       _ActionButton(
                         label: 'Rate & Review This Stay',
                         icon: Icons.star_outline_rounded,
+                        outlined: true,
                         onTap: () => context.push('/review', extra: {
                           'bookingId': booking.id,
                           'tentName': booking.tentName ?? 'Your stay',
@@ -505,7 +449,7 @@ Widget _detailRow(String label, String value, {bool bold = false}) => Row(
       ],
     );
 
-// ── Dark Maroon Hero Header ────────────────────────────────────────────────────
+// ── Header — same plain white chrome as every other screen ─────────────────
 class _DetailHeader extends StatelessWidget {
   final bool isConfirmed;
   final VoidCallback onQrTap;
@@ -515,60 +459,36 @@ class _DetailHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: _kMaroon,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-              color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
+        color: _kCardBg,
+        border: Border(bottom: BorderSide(color: Color(0xFFDDD0C4))),
       ),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(4, 8, 16, 12),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new,
-                    color: _kCream, size: 20),
+                icon: const Icon(Icons.chevron_left,
+                    color: _kTextDark, size: 28),
                 onPressed: () => context.pop(),
               ),
               const Expanded(
                 child: Text(
                   'Booking Details',
-                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: _kCream,
-                    fontWeight: FontWeight.bold,
+                    color: _kTextDark,
+                    fontWeight: FontWeight.w700,
                     fontSize: 18,
-                    letterSpacing: 0.3,
                   ),
                 ),
               ),
               if (isConfirmed)
-                GestureDetector(
-                  onTap: onQrTap,
-                  child: Container(
-                    width: 38,
-                    height: 38,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: _kGold, width: 1.5),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Icon(Icons.qr_code_rounded,
-                        color: _kGold, size: 18),
-                  ),
-                )
-              else
-                Container(
-                  width: 38,
-                  height: 38,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: _kGold, width: 1.5),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child:
-                      const Icon(Icons.temple_hindu, color: _kGold, size: 18),
+                IconButton(
+                  icon: const Icon(Icons.qr_code_rounded,
+                      color: _kGold, size: 22),
+                  onPressed: onQrTap,
+                  tooltip: 'View QR Code',
                 ),
             ],
           ),
@@ -591,13 +511,12 @@ class _InfoCard extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: _kCardBg,
-        borderRadius: handDrawnRadius(base: 14, seed: seed),
-        border: Border.all(color: _kGold.withValues(alpha: 0.18)),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
               color: _kMaroon.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3)),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
         ],
       ),
       child: child,
@@ -605,13 +524,18 @@ class _InfoCard extends StatelessWidget {
   }
 }
 
-// ── Primary Action Button ──────────────────────────────────────────────────────
+// ── Primary / secondary action button ──────────────────────────────────────
 class _ActionButton extends StatelessWidget {
   final String label;
   final IconData icon;
   final VoidCallback onTap;
-  const _ActionButton(
-      {required this.label, required this.icon, required this.onTap});
+  final bool outlined;
+  const _ActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+    this.outlined = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -621,19 +545,18 @@ class _ActionButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
-          color: _kMaroon,
-          borderRadius: handDrawnRadius(base: 14, seed: 10),
-          border: Border.all(color: _kGold.withValues(alpha: 0.6)),
-          boxShadow: stickerShadow(_kMaroon.withValues(alpha: 0.3)),
+          color: outlined ? Colors.transparent : _kGold,
+          borderRadius: BorderRadius.circular(14),
+          border: outlined ? Border.all(color: _kGold, width: 1.5) : null,
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, color: _kGold, size: 18),
+            Icon(icon, color: outlined ? _kGold : Colors.white, size: 18),
             const SizedBox(width: 8),
             Text(label,
-                style: const TextStyle(
-                  color: _kCream,
+                style: TextStyle(
+                  color: outlined ? _kGold : Colors.white,
                   fontWeight: FontWeight.bold,
                   fontSize: 15,
                 )),
@@ -714,7 +637,6 @@ class _CancelButtonState extends State<_CancelButton> {
                 decoration: BoxDecoration(
                   color: _kGreen.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _kGreen.withValues(alpha: 0.35)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -732,7 +654,7 @@ class _CancelButtonState extends State<_CancelButton> {
                       const SizedBox(height: 6),
                       _amountRow('Cancellation charge', -fee),
                     ],
-                    const WavyDivider(color: _kDivider),
+                    const Divider(color: _kDivider, height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
@@ -779,7 +701,6 @@ class _CancelButtonState extends State<_CancelButton> {
                 decoration: BoxDecoration(
                   color: _kRed.withValues(alpha: 0.07),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: _kRed.withValues(alpha: 0.3)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -890,7 +811,7 @@ class _CancelButtonState extends State<_CancelButton> {
         padding: const EdgeInsets.symmetric(vertical: 15),
         decoration: BoxDecoration(
           color: _kCardBg,
-          borderRadius: handDrawnRadius(base: 14, seed: 11),
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(color: _kRed.withValues(alpha: 0.5), width: 1.5),
         ),
         child: Row(
@@ -1027,8 +948,7 @@ class _RefundStatusCardState extends State<_RefundStatusCard> {
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
             color: accent.withValues(alpha: 0.07),
-            borderRadius: handDrawnRadius(base: 14, seed: 12),
-            border: Border.all(color: accent.withValues(alpha: 0.35)),
+            borderRadius: BorderRadius.circular(14),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -1060,7 +980,7 @@ class _RefundStatusCardState extends State<_RefundStatusCard> {
                 style: const TextStyle(
                     color: _kTextMuted, fontSize: 12, height: 1.4),
               ),
-              const WavyDivider(color: _kDivider, height: 22),
+              const Divider(color: _kDivider, height: 22),
               if (fee > 0) ...[
                 _detailRow('Cancellation charge', '₹${fee.toStringAsFixed(0)}'),
                 const SizedBox(height: 8),

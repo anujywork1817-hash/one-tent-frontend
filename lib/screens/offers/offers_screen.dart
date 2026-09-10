@@ -6,7 +6,7 @@ import '../../data/models/models.dart';
 import '../../data/repositories/repositories.dart';
 
 const _kHeroBg      = Color(0xFF3D0F05);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kBodyBg      = Color(0xFFFFFFFF);
 const _kCardBg      = Color(0xFFFFFFFF);
 const _kGold        = Color(0xFFD4891A);
 const _kBorderLight = Color(0xFFDDD0C4);

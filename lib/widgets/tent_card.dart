@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:provider/provider.dart';
+import '../../core/constants/app_constants.dart';
 import '../../data/models/models.dart';
 import '../core/utils/currency_utils.dart';
 import '../providers/providers.dart';
-import 'handcrafted.dart';
 
 // ─── One Tent Design Tokens ───────────────────────────────────────────────
 const _kMaroon = Color(0xFF4A1000);
@@ -17,6 +17,22 @@ const _kSuccess = Color(0xFF2E7D32);
 const _kError = Color(0xFFC0392B);
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Placeholder cover shots used only until a tent has a real admin-uploaded
+// photo (image_urls is empty for every tent right now) — same bundled
+// gallery assets used as the detail screen's fallback gallery, picked
+// deterministically per tent so a given tent's card always shows the same
+// shot instead of flickering between them on rebuild.
+const _fallbackCovers = [
+  'assets/images/tent_gallery_1.png',
+  'assets/images/tent_gallery_2.png',
+  'assets/images/tent_gallery_3.png',
+  'assets/images/tent_gallery_4.png',
+  'assets/images/tent_gallery_5.png',
+];
+
+/// Photo-forward listing card — hero image up top, name/location/amenity
+/// pills below, price + CTA on the last row. Shows the tent's first real
+/// photo when the admin has uploaded one, otherwise a stand-in gallery shot.
 class TentCard extends StatelessWidget {
   final CapsuleTent tent;
   final VoidCallback onTap;
@@ -42,167 +58,193 @@ class TentCard extends StatelessWidget {
     final priceLabel = CurrencyUtils.formatPrice(tent.price1Day,
         currency: currency, rates: rates);
 
+    final wishlist = context.watch<WishlistProvider>();
+    final isSaved = wishlist.isSaved(tent.id);
+    final isVip = tent.tentType.toLowerCase() == 'luxury';
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        margin: const EdgeInsets.only(bottom: 14, right: 2),
+        margin: const EdgeInsets.only(bottom: 16),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: handDrawnRadius(base: 16, seed: index),
-          border: Border.all(color: _kBorderLight, width: 1.2),
-          boxShadow: stickerShadow(_kMaroon.withValues(alpha: 0.13)),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: _kBorderLight, width: 1),
+          boxShadow: [
+            BoxShadow(
+              color: _kMaroon.withValues(alpha: 0.08),
+              blurRadius: 16,
+              offset: const Offset(0, 6),
+            ),
+          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              // ── Tent icon box ──────────────────────────────────────
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: _kGold.withValues(alpha: 0.12),
-                  borderRadius: handDrawnRadius(base: 14, seed: index + 1),
-                  border: Border.all(color: _kGold.withValues(alpha: 0.30)),
+        clipBehavior: Clip.antiAlias,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // ── Hero photo ────────────────────────────────────────
+            Stack(
+              children: [
+                AspectRatio(
+                  aspectRatio: 16 / 11,
+                  child: (tent.imageUrl == null || tent.imageUrl!.isEmpty)
+                      ? Image.asset(_fallbackCovers[0], fit: BoxFit.cover)
+                      : Image.network(
+                          AppConstants.fileUrl(tent.imageUrl!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => _imagePlaceholder(),
+                          loadingBuilder: (context, child, progress) {
+                            if (progress == null) return child;
+                            return _imagePlaceholder(loading: true);
+                          },
+                        ),
                 ),
-                child: const Icon(Icons.cabin, color: _kGold, size: 32),
-              ),
-              const SizedBox(width: 14),
-
-              // ── Details ────────────────────────────────────────────
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Name + status badge
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            tent.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                              color: _kTextDark,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _statusBadge(),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-
-                    // Tent type
-                    Text(
-                      tent.tentType.toUpperCase(),
-                      style: const TextStyle(
-                        color: _kGold,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.8,
+                // Bottom gradient so any badges/text sitting on the photo
+                // edge stay legible regardless of what's in the shot.
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 0,
+                  height: 48,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.topCenter,
+                        colors: [
+                          Colors.black.withValues(alpha: 0.35),
+                          Colors.transparent,
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 6),
-
-                    // Highlighted bed configuration
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color: _kMaroon,
-                        borderRadius: BorderRadius.circular(6),
+                  ),
+                ),
+                if (isVip)
+                  Positioned(
+                    top: 12,
+                    left: 12,
+                    child: _pillBadge('VIP', _kMaroon, Colors.white),
+                  ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: GestureDetector(
+                    onTap: () => wishlist.toggle(tent),
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
                       ),
-                      child: Row(mainAxisSize: MainAxisSize.min, children: [
-                        const Icon(Icons.bed_rounded,
-                            size: 12, color: _kGold),
-                        const SizedBox(width: 4),
-                        Text(
-                          tent.bedLabel,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 10.5,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
-                      ]),
+                      child: Icon(
+                        isSaved ? Icons.favorite : Icons.favorite_border,
+                        size: 18,
+                        color: isSaved ? _kError : _kTextMid,
+                      ),
                     ),
-                    const SizedBox(height: 6),
+                  ),
+                ),
+                Positioned(
+                  left: 12,
+                  bottom: 10,
+                  child: _statusBadge(),
+                ),
+              ],
+            ),
 
-                    // Location
-                    Row(children: [
-                      const Icon(Icons.location_on_outlined,
-                          size: 12, color: _kTextLight),
-                      const SizedBox(width: 3),
+            // ── Details ────────────────────────────────────────────
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    tent.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16.5,
+                      color: _kTextDark,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(children: [
+                    const Icon(Icons.location_on_outlined,
+                        size: 13, color: _kTextLight),
+                    const SizedBox(width: 3),
+                    Expanded(
+                      child: Text(
+                        tent.location,
+                        style: const TextStyle(
+                            fontSize: 12.5, color: _kTextLight),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ]),
+                  const SizedBox(height: 10),
+
+                  // Amenity pills — outline chips, matching the "AC ·
+                  // Private Bath · Butler" strip style, built from
+                  // whatever this tent actually has (never fabricated).
+                  if (tent.amenities.isNotEmpty)
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: tent.amenities
+                          .take(4)
+                          .map((a) => _amenityPill(a))
+                          .toList(),
+                    ),
+                  const SizedBox(height: 14),
+
+                  // Price + CTA
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       Expanded(
-                        child: Text(
-                          tent.location,
-                          style:
-                              const TextStyle(fontSize: 12, color: _kTextLight),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ]),
-                    const SizedBox(height: 10),
-
-                    // Amenities + price — each icon borrows a different
-                    // accent color rather than repeating one muted tone.
-                    Row(children: [
-                      if (tent.hasAC)
-                        _amenityIcon(Icons.ac_unit, AppPalette.accentFor(0)),
-                      if (tent.hasWifi)
-                        _amenityIcon(Icons.wifi, AppPalette.accentFor(1)),
-                      if (tent.hasBathroom)
-                        _amenityIcon(
-                            Icons.shower_outlined, AppPalette.accentFor(2)),
-                      if (tent.hasTV)
-                        _amenityIcon(
-                            Icons.tv_outlined, AppPalette.accentFor(3)),
-                      if (!tent.hasAC &&
-                          !tent.hasWifi &&
-                          !tent.hasBathroom &&
-                          !tent.hasTV)
-                        _amenityIcon(Icons.people_outline, _kTextMid),
-                      const Spacer(),
-                      // Flexible so a longer converted price (e.g. "AED
-                      // 66.37/day" vs. the old fixed "₹1500/day") shrinks
-                      // and ellipsizes instead of overflowing the row.
-                      Flexible(
-                        child: Tilt(
-                          degrees: index.isEven ? -2 : 2,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 10, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: _kGold.withValues(alpha: 0.10),
-                              borderRadius:
-                                  handDrawnRadius(base: 20, seed: index + 2),
-                              border: Border.all(
-                                  color: _kGold.withValues(alpha: 0.30)),
-                            ),
-                            child: Text(
-                              '$priceLabel/day',
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('From',
+                                style: TextStyle(
+                                    fontSize: 11, color: _kTextLight)),
+                            Text(
+                              '$priceLabel/night',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 12,
-                                color: _kGold,
+                                fontSize: 18,
+                                color: _kTextDark,
                               ),
                             ),
-                          ),
+                          ],
                         ),
                       ),
-                    ]),
-                  ],
-                ),
+                      const SizedBox(width: 10),
+                      ElevatedButton(
+                        onPressed: onTap,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _kGold,
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 20, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                        child: const Text('View Details',
+                            style: TextStyle(
+                                fontWeight: FontWeight.w700, fontSize: 13.5)),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     )
@@ -214,32 +256,65 @@ class TentCard extends StatelessWidget {
             begin: 0.08, end: 0, duration: 320.ms, curve: Curves.easeOutCubic);
   }
 
+  Widget _imagePlaceholder({bool loading = false}) => Container(
+        color: _kGold.withValues(alpha: 0.10),
+        alignment: Alignment.center,
+        child: loading
+            ? const SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2, color: _kGold),
+              )
+            : const Icon(Icons.cabin, color: _kGold, size: 40),
+      );
+
+  Widget _pillBadge(String label, Color bg, Color fg) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Text(label,
+            style: TextStyle(
+                color: fg, fontSize: 11, fontWeight: FontWeight.w800)),
+      );
+
   Widget _statusBadge() {
     final color = tent.isAvailable ? _kSuccess : _kError;
-    return Tilt(
-      degrees: 3,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: handDrawnRadius(base: 10, seed: 3),
-          border: Border.all(color: color.withValues(alpha: 0.4)),
-          boxShadow: stickerShadow(color.withValues(alpha: 0.18), dx: 2, dy: 2),
-        ),
-        child: Text(
-          tent.isAvailable ? 'Available' : 'Booked',
-          style: TextStyle(
-            color: color,
-            fontSize: 10,
-            fontWeight: FontWeight.bold,
-          ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.18),
+              blurRadius: 4,
+              offset: const Offset(0, 2)),
+        ],
+      ),
+      child: Text(
+        tent.isAvailable ? 'Available' : 'Booked',
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 10.5,
+          fontWeight: FontWeight.bold,
         ),
       ),
     );
   }
 
-  Widget _amenityIcon(IconData icon, Color color) => Padding(
-        padding: const EdgeInsets.only(right: 8),
-        child: Icon(icon, size: 15, color: color),
+  Widget _amenityPill(String label) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+        decoration: BoxDecoration(
+          color: _kGold.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: _kBorderLight),
+        ),
+        child: Text(
+          label,
+          style: const TextStyle(
+              fontSize: 11, fontWeight: FontWeight.w600, color: _kTextMid),
+        ),
       );
 }

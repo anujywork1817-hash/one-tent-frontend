@@ -4,14 +4,13 @@ import 'package:provider/provider.dart';
 
 import '../../providers/providers.dart';
 
-const _kHeroBg      = Color(0xFF3D0F05);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kHeroBg      = Color(0xFF4A1000);
+const _kBodyBg      = Color(0xFFFFFFFF);
 const _kCardBg      = Color(0xFFFFFFFF);
 const _kBorderLight = Color(0xFFDDD0C4);
 const _kGold        = Color(0xFFD4891A);
 const _kTextDark    = Color(0xFF2D0F05);
 const _kTextLight   = Color(0xFFA07050);
-const _kCream       = Color(0xFFF5E6C8);
 const _kError       = Color(0xFFC0392B);
 const _kSuccess     = Color(0xFF2E7D32);
 
@@ -108,37 +107,20 @@ class _ReviewScreenState extends State<ReviewScreen> {
     return Scaffold(
       backgroundColor: _kBodyBg,
       appBar: AppBar(
-        backgroundColor: _kHeroBg,
+        backgroundColor: _kCardBg,
+        surfaceTintColor: _kCardBg,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _kGold.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _kGold.withValues(alpha: 0.40)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: _kCream, size: 20),
-            onPressed: () => context.pop(),
-          ),
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
+          onPressed: () => context.pop(),
         ),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: const Icon(Icons.star_outline, color: _kGold, size: 16),
-          ),
-          const SizedBox(width: 10),
-          const Text('Rate & Review',
-              style: TextStyle(
-                  color: _kCream, fontWeight: FontWeight.w600, fontSize: 17)),
-        ]),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        title: const Text('Rate & Review',
+            style: TextStyle(
+                color: _kTextDark, fontWeight: FontWeight.w700, fontSize: 17)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _kBorderLight),
         ),
       ),
       body: _loadingExisting
@@ -161,12 +143,11 @@ class _ReviewScreenState extends State<ReviewScreen> {
               decoration: BoxDecoration(
                 color: _kCardBg,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: _kBorderLight),
                 boxShadow: [
                   BoxShadow(
-                      color: _kHeroBg.withValues(alpha: 0.06),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3)),
+                      color: _kHeroBg.withValues(alpha: 0.07),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6)),
                 ],
               ),
               child: Column(
@@ -244,9 +225,8 @@ class _ReviewScreenState extends State<ReviewScreen> {
               Container(
                 padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                    color: _kError.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: _kError.withValues(alpha: 0.25))),
+                    color: _kError.withValues(alpha: 0.07),
+                    borderRadius: BorderRadius.circular(10)),
                 child: Row(children: [
                   const Icon(Icons.error_outline, color: _kError, size: 18),
                   const SizedBox(width: 8),
@@ -265,23 +245,21 @@ class _ReviewScreenState extends State<ReviewScreen> {
               child: ElevatedButton(
                 onPressed: _sending ? null : _submit,
                 style: ElevatedButton.styleFrom(
-                    backgroundColor: _kHeroBg,
-                    disabledBackgroundColor: _kBorderLight,
+                    backgroundColor: _kGold,
+                    foregroundColor: Colors.white,
+                    disabledBackgroundColor: _kGold.withValues(alpha: 0.4),
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(26),
-                      side: BorderSide(color: _kGold.withValues(alpha: 0.55)),
+                      borderRadius: BorderRadius.circular(16),
                     )),
                 child: _sending
                     ? const SizedBox(
                         width: 20, height: 20,
                         child: CircularProgressIndicator(
-                            color: _kGold, strokeWidth: 2))
+                            color: Colors.white, strokeWidth: 2))
                     : const Text('Submit Review',
                         style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: _kCream)),
+                            fontSize: 16, fontWeight: FontWeight.w800)),
               ),
             ),
           ],

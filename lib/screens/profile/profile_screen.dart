@@ -8,13 +8,11 @@ import '../../providers/providers.dart';
 // ─────────────────────────────────────────────
 //  One Tent — Split Theme Tokens
 // ─────────────────────────────────────────────
-const _kHeroBg       = Color(0xFF3D0F05);   // dark maroon hero
-const _kBodyBg       = Color(0xFFF2EAE0);   // warm cream body
+const _kBodyBg       = Color(0xFFFFFFFF);   // warm cream body
 const _kCardBg       = Color(0xFFFFFFFF);   // white cards
 const _kChipBg       = Color(0xFFEDE0D4);   // beige icon bg
 const _kBorderLight  = Color(0xFFDDD0C4);   // light border
 const _kGold         = Color(0xFFD4891A);   // gold accent
-const _kGoldLight    = Color(0xFFE8A93A);   // gold light
 const _kMaroon       = Color(0xFF5C1A08);   // maroon icons/text
 const _kTextDark     = Color(0xFF2D0F05);   // headings
 const _kTextMid      = Color(0xFF7A4A30);   // body text
@@ -57,128 +55,22 @@ class _ProfileScreenState extends State<ProfileScreen> {
         physics: const AlwaysScrollableScrollPhysics(),
         slivers: [
 
-          // ── Hero App Bar ──────────────────────────────────
+          // ── Header — same plain white chrome as every other screen ──
           SliverAppBar(
-            expandedHeight: 260,
             pinned: true,
-            backgroundColor: _kHeroBg,
+            backgroundColor: _kCardBg,
+            surfaceTintColor: _kCardBg,
             elevation: 0,
+            scrolledUnderElevation: 0,
             automaticallyImplyLeading: false,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF5C1A08), Color(0xFF3D0F05)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Stack(children: [
-                  // Decorative circles
-                  Positioned(
-                    top: -50, right: -50,
-                    child: Container(
-                      width: 200, height: 200,
-                      decoration: BoxDecoration(
-                        color: _kGold.withValues(alpha: 0.08),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: -30, left: -30,
-                    child: Container(
-                      width: 150, height: 150,
-                      decoration: BoxDecoration(
-                        color: _kGold.withValues(alpha: 0.06),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  // Content
-                  SafeArea(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 16),
-                          // Avatar
-                          Container(
-                            width: 88, height: 88,
-                            decoration: BoxDecoration(
-                              color: _kChipBg,
-                              borderRadius: BorderRadius.circular(22),
-                              border: Border.all(
-                                  color: _kGold.withValues(alpha: 0.5),
-                                  width: 2),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.25),
-                                  blurRadius: 16,
-                                  offset: const Offset(0, 8),
-                                ),
-                              ],
-                            ),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: (v?.profileImageUrl != null &&
-                                      v!.profileImageUrl!.isNotEmpty)
-                                  ? Image.network(
-                                      AppConstants.fileUrl(v.profileImageUrl!),
-                                      fit: BoxFit.cover,
-                                      errorBuilder: (_, __, ___) =>
-                                          _avatarFallback(v.fullName))
-                                  : _avatarFallback(v?.fullName ?? '?'),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            v?.fullName.isNotEmpty == true
-                                ? v!.fullName
-                                : 'Loading...',
-                            style: const TextStyle(
-                                color: _kCream,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w700),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            v?.email ?? '',
-                            style: TextStyle(
-                                color: _kCream.withValues(alpha: 0.65),
-                                fontSize: 13),
-                          ),
-                          const SizedBox(height: 10),
-                          // One Tent badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 5),
-                            decoration: BoxDecoration(
-                              color: _kGold.withValues(alpha: 0.18),
-                              borderRadius: BorderRadius.circular(14),
-                              border: Border.all(
-                                  color: _kGold.withValues(alpha: 0.45)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.verified_user,
-                                    color: _kGoldLight, size: 12),
-                                SizedBox(width: 5),
-                                Text('One Tent',
-                                    style: TextStyle(
-                                        color: _kGoldLight,
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600)),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
+            title: const Text('Profile',
+                style: TextStyle(
+                    color: _kTextDark,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17)),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(height: 1, color: _kBorderLight),
             ),
           ),
 
@@ -191,6 +83,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
+                  // ── Avatar + name card ────────────────────
+                  Center(
+                    child: Column(
+                      children: [
+                        Container(
+                          width: 88, height: 88,
+                          decoration: BoxDecoration(
+                            color: _kChipBg,
+                            borderRadius: BorderRadius.circular(22),
+                            boxShadow: [
+                              BoxShadow(
+                                color: _kMaroon.withValues(alpha: 0.12),
+                                blurRadius: 16,
+                                offset: const Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(22),
+                            child: (v?.profileImageUrl != null &&
+                                    v!.profileImageUrl!.isNotEmpty)
+                                ? Image.network(
+                                    AppConstants.fileUrl(v.profileImageUrl!),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (_, __, ___) =>
+                                        _avatarFallback(v.fullName))
+                                : _avatarFallback(v?.fullName ?? '?'),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Text(
+                          v?.fullName.isNotEmpty == true
+                              ? v!.fullName
+                              : 'Loading...',
+                          style: const TextStyle(
+                              color: _kTextDark,
+                              fontSize: 18,
+                              fontWeight: FontWeight.w700),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          v?.email ?? '',
+                          style: const TextStyle(
+                              color: _kTextLight, fontSize: 13),
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: _kGold.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.verified_user,
+                                  color: _kGold, size: 12),
+                              SizedBox(width: 5),
+                              Text('One Tent',
+                                  style: TextStyle(
+                                      color: _kGold,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
                   // ── Unverified email banner ───────────────
                   if (v != null && !v.emailVerified) ...[
                     GestureDetector(
@@ -201,8 +165,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         decoration: BoxDecoration(
                           color: _kGold.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                              color: _kGold.withValues(alpha: 0.35)),
                         ),
                         child: Row(children: [
                           const Icon(Icons.mark_email_unread_outlined,
@@ -241,9 +203,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 14, vertical: 7),
                           decoration: BoxDecoration(
-                            color: _kCardBg,
+                            color: _kGold.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(20),
-                            border: Border.all(color: _kGold),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -299,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       icon: Icons.book_online_outlined,
                       label: 'My Bookings',
                       subtitle: 'View your tent bookings',
-                      onTap: () => context.push('/my-bookings')),
+                      onTap: () => context.go('/my-bookings')),
                   const SizedBox(height: 10),
                   _menuTile(context,
                       icon: Icons.favorite_outline,
@@ -328,12 +289,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _menuTile(context,
                       icon: Icons.star_outline,
                       label: 'Rate & Review',
-                      // Reviews are tied to a specific stay now (so other
-                      // guests see it on that tent's page) — send them to
-                      // pick which booking to review instead of a bare
-                      // generic feedback form.
-                      subtitle: 'Review a tent you\'ve stayed at',
-                      onTap: () => context.push('/my-bookings')),
+                      // App-level rating: 5 stars, then either straight to
+                      // the Play Store (4-5★) or an in-app feedback box
+                      // (lower ratings) instead of a public store review.
+                      // A specific stay is still reviewed from that
+                      // booking's own detail page.
+                      subtitle: 'Rate One Tent on the Play Store',
+                      onTap: () => context.push('/rate-app')),
 
                   const SizedBox(height: 28),
 
@@ -447,12 +409,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
       decoration: BoxDecoration(
         color: _kCardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _kBorderLight),
         boxShadow: [
           BoxShadow(
               color: _kMaroon.withValues(alpha: 0.06),
-              blurRadius: 12,
-              offset: const Offset(0, 3)),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
         ],
       ),
       child: Column(
@@ -512,12 +473,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
         decoration: BoxDecoration(
           color: _kCardBg,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: _kBorderLight),
           boxShadow: [
             BoxShadow(
                 color: _kMaroon.withValues(alpha: 0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 2)),
+                blurRadius: 12,
+                offset: const Offset(0, 3)),
           ],
         ),
         child: ListTile(
@@ -539,15 +499,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           subtitle: Text(subtitle,
               style: const TextStyle(
                   color: _kTextLight, fontSize: 12)),
-          trailing: Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kChipBg,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: const Icon(Icons.chevron_right,
-                color: _kMaroon, size: 18),
-          ),
+          trailing: const Icon(Icons.chevron_right,
+              color: _kTextLight, size: 20),
         ),
       ),
     );

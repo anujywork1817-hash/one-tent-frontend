@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/constants/app_constants.dart';
 import '../../core/utils/currency_utils.dart';
 import '../../data/models/models.dart';
 import '../../providers/providers.dart';
@@ -10,10 +11,9 @@ import '../../widgets/handcrafted.dart';
 // ─── One Tent Design Tokens ───────────────────────────────────────────────
 const _kHeroBg       = Color(0xFF4A1000);   // dark maroon hero
 const _kMaroonMid    = Color(0xFF6B1A00);
-const _kBodyBg       = Color(0xFFF2EAE0);   // warm cream body
+const _kBodyBg       = Color(0xFFFFFFFF);   // warm cream body
 const _kCardBg       = Color(0xFFFFFFFF);
 const _kGold         = Color(0xFFD4891A);
-const _kGoldLight    = Color(0xFFE8A93A);
 const _kBorderLight  = Color(0xFFDDD0C4);
 const _kTextDark     = Color(0xFF2D0F05);
 const _kTextMid      = Color(0xFF7A4A30);
@@ -22,55 +22,6 @@ const _kCream        = Color(0xFFF5E6C8);
 const _kSuccess      = Color(0xFF2E7D32);
 const _kError        = Color(0xFFC0392B);
 // ─────────────────────────────────────────────────────────────────────────────
-
-const _uspHighlights = [
-  {'icon': Icons.privacy_tip_rounded,       'label': 'Private & Peaceful',   'color': Color(0xFF7A1F0A)},
-  {'icon': Icons.bolt_rounded,              'label': 'Smart & Sustainable',  'color': Color(0xFF2E7D32)},
-  {'icon': Icons.health_and_safety_rounded, 'label': 'Secure & Hygienic',    'color': Color(0xFF6B1A00)},
-  {'icon': Icons.temple_hindu_rounded,      'label': 'Culturally Immersive', 'color': Color(0xFFD4891A)},
-];
-
-const _ecoFeatures = [
-  {'icon': Icons.solar_power_rounded, 'label': 'Solar Powered'},
-  {'icon': Icons.water_drop_rounded,  'label': 'Water Saving'},
-  {'icon': Icons.recycling_rounded,   'label': 'Low Waste Living'},
-];
-
-const _safetyFeatures = [
-  {'icon': Icons.security_rounded,      'label': '24/7 Security'},
-  {'icon': Icons.videocam_rounded,      'label': 'CCTV Monitoring'},
-  {'icon': Icons.lock_rounded,          'label': 'Smart Access Control'},
-  {'icon': Icons.support_agent_rounded, 'label': 'On-call Assistance'},
-];
-
-const _travelerTypes = [
-  {'icon': Icons.person_rounded,           'label': 'Solo Travelers'},
-  {'icon': Icons.people_rounded,           'label': 'Couples'},
-  {'icon': Icons.laptop_rounded,           'label': 'Digital Nomads'},
-  {'icon': Icons.self_improvement_rounded, 'label': 'Pilgrims'},
-];
-
-const _interiorFeatures = [
-  {'icon': Icons.bed_rounded,               'label': 'Ergonomic Bed',     'sub': 'Premium Linens'},
-  {'icon': Icons.ac_unit_rounded,           'label': 'AC / Heating',      'sub': 'Climate Control'},
-  {'icon': Icons.wifi_rounded,              'label': 'High-Speed WiFi',   'sub': '& Charging Ports'},
-  {'icon': Icons.shower_rounded,            'label': 'Private Bathroom',  'sub': 'Hot Shower'},
-  {'icon': Icons.lock_rounded,              'label': 'Smart Lock',        'sub': '24/7 Security'},
-  {'icon': Icons.desk_rounded,              'label': 'Work & Relax Desk', 'sub': 'Quiet Area'},
-  {'icon': Icons.solar_power_rounded,       'label': 'Eco-Friendly',      'sub': 'Solar Powered'},
-  {'icon': Icons.cleaning_services_rounded, 'label': 'Housekeeping',      'sub': 'Daily + Laundry'},
-];
-
-// Product-style photo gallery — the real unit photos + spec sheets, in the
-// order a buyer would want to see them: exterior, dimensions, build quality,
-// interior, then the expandable/modular option.
-const _galleryImages = [
-  'assets/images/tent_gallery_1.png',
-  'assets/images/tent_gallery_2.png',
-  'assets/images/tent_gallery_3.png',
-  'assets/images/tent_gallery_4.png',
-  'assets/images/tent_gallery_5.png',
-];
 
 class TentDetailScreen extends StatefulWidget {
   final CapsuleTent tent;
@@ -81,12 +32,39 @@ class TentDetailScreen extends StatefulWidget {
 }
 
 class _TentDetailScreenState extends State<TentDetailScreen> {
-  final _galleryCtrl = PageController();
-  int _galleryPage = 0;
   TentReviewSummary _reviews = const TentReviewSummary();
   bool _reviewsLoading = true;
+  final _photoController = PageController();
+  int _photoIndex = 0;
 
   CapsuleTent get tent => widget.tent;
+
+  // Placeholder gallery used only until a tent has real admin-uploaded
+  // photos (image_urls is empty for every tent right now) — bundled local
+  // assets so the detail screen shows an actual gallery instead of a bare
+  // icon. Each of these paths is recognized in _buildPhoto() and rendered
+  // via Image.asset instead of a network fetch.
+  static const _fallbackPhotos = [
+    'assets/images/tent_gallery_1.png',
+    'assets/images/tent_gallery_2.png',
+    'assets/images/tent_gallery_3.png',
+    'assets/images/tent_gallery_4.png',
+    'assets/images/tent_gallery_5.png',
+  ];
+
+  List<String> get _photos =>
+      tent.imageUrls.isNotEmpty ? tent.imageUrls : _fallbackPhotos;
+
+  Widget _buildPhoto(String path, {BoxFit fit = BoxFit.cover}) {
+    if (path.startsWith('assets/')) {
+      return Image.asset(path, fit: fit);
+    }
+    return Image.network(
+      AppConstants.fileUrl(path),
+      fit: fit,
+      errorBuilder: (_, __, ___) => _photoPlaceholder(),
+    );
+  }
 
   @override
   void initState() {
@@ -105,7 +83,7 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
 
   @override
   void dispose() {
-    _galleryCtrl.dispose();
+    _photoController.dispose();
     super.dispose();
   }
 
@@ -116,40 +94,28 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
       body: CustomScrollView(
         slivers: [
 
-          // ── Hero gallery ─────────────────────────────────────────────
-          // Plain SliverToBoxAdapter, not SliverAppBar.flexibleSpace — a
-          // PageView nested inside FlexibleSpaceBar loses horizontal swipe
-          // gestures to the SliverAppBar's own collapse/expand gesture
-          // handling, so guests could only advance by tapping a dot. This
-          // way the PageView owns its gesture arena outright.
+          // ── Hero photo gallery ─────────────────────────────────────────
+          // Every real photo the admin uploaded for this tent — swipeable,
+          // with dot indicators and a full-screen zoomable viewer on tap.
           SliverToBoxAdapter(
             child: SizedBox(
-              height: 280,
+              height: 300,
               child: Stack(fit: StackFit.expand, children: [
-                PageView.builder(
-                  controller: _galleryCtrl,
-                  itemCount: _galleryImages.length,
-                  onPageChanged: (i) => setState(() => _galleryPage = i),
-                  itemBuilder: (_, i) => Image.asset(
-                    _galleryImages[i],
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => Container(
-                      decoration: const BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [_kHeroBg, _kMaroonMid],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
+                _photos.isEmpty
+                    ? _photoPlaceholder()
+                    : PageView.builder(
+                        controller: _photoController,
+                        itemCount: _photos.length,
+                        onPageChanged: (i) => setState(() => _photoIndex = i),
+                        itemBuilder: (_, i) => GestureDetector(
+                          onTap: () => _openFullPhoto(i),
+                          child: _buildPhoto(_photos[i]),
                         ),
                       ),
-                      child: const Icon(Icons.cabin, size: 60, color: _kGold),
-                    ),
-                  ),
-                ),
-                // Bottom scrim so the app bar title/back button and the dot
-                // indicator both stay legible over a bright photo.
+                // Bottom scrim so the badges/heart stay legible over a
+                // bright photo.
                 const Positioned(
-                  left: 0, right: 0, bottom: 0,
-                  height: 90,
+                  left: 0, right: 0, bottom: 0, height: 80,
                   child: DecoratedBox(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
@@ -160,78 +126,73 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
                     ),
                   ),
                 ),
-                // Page dots
-                Positioned(
-                  bottom: 14,
-                  left: 0, right: 0,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: List.generate(_galleryImages.length, (i) {
-                      final active = i == _galleryPage;
-                      return AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        margin: const EdgeInsets.symmetric(horizontal: 3),
-                        width: active ? 18 : 6,
-                        height: 6,
-                        decoration: BoxDecoration(
-                          color: active
-                              ? _kGold
-                              : Colors.white.withValues(alpha: 0.6),
-                          borderRadius: BorderRadius.circular(3),
-                        ),
-                      );
-                    }),
-                  ),
-                ),
-                // "2 / 5" counter, ecommerce-gallery style — sits below the
-                // back/wishlist row now that this isn't inside an app bar.
-                Positioned(
-                  top: MediaQuery.of(context).padding.top + 56,
-                  right: 16,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.45),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      '${_galleryPage + 1} / ${_galleryImages.length}',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                // Photo count / dot indicators — only when there's more
+                // than one real photo to page through.
+                if (_photos.length > 1)
+                  Positioned(
+                    bottom: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.black45,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        '${_photoIndex + 1}/${_photos.length}',
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700),
                       ),
                     ),
                   ),
-                ),
-                // Back + wishlist — floating over the gallery, same as they
-                // used to sit in the app bar's leading/actions slots.
+                // Back button.
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 8,
                   left: 8,
                   child: Container(
-                    decoration: BoxDecoration(
-                      color: _kGold.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _kGold.withValues(alpha: 0.40)),
+                    decoration: const BoxDecoration(
+                      color: Colors.black38,
+                      shape: BoxShape.circle,
                     ),
                     child: IconButton(
-                      icon: const Icon(Icons.arrow_back, color: _kCream),
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
                       onPressed: () => context.pop(),
                     ),
                   ),
                 ),
+                // VIP badge, bottom-left — real signal: only shown for
+                // tents actually typed "luxury".
+                if (tent.tentType.toLowerCase() == 'luxury')
+                  Positioned(
+                    bottom: 12,
+                    left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: _kHeroBg,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('VIP',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                // Wishlist heart.
                 Positioned(
                   top: MediaQuery.of(context).padding.top + 8,
                   right: 8,
                   child: Container(
-                    decoration: BoxDecoration(
-                      color: _kGold.withValues(alpha: 0.18),
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _kGold.withValues(alpha: 0.40)),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
                     ),
-                    child: _WishlistHeartButton(tent: tent),
+                    child: _WishlistHeartButton(tent: tent, light: false),
                   ),
                 ),
               ]),
@@ -245,240 +206,143 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
 
-                  // ── Name + status ─────────────────────────────────────
+                  // ── Name + rating ─────────────────────────────────────
                   Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
+                      Expanded(
+                        child: Text(
+                          tent.name,
+                          style: AppFonts.display(
+                              fontSize: 24,
+                              fontWeight: FontWeight.w700,
+                              color: _kTextDark),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Row(mainAxisSize: MainAxisSize.min, children: [
+                            const Icon(Icons.star_rounded,
+                                size: 18, color: _kGold),
+                            const SizedBox(width: 3),
+                            Text(
+                              _reviewsLoading
+                                  ? '—'
+                                  : _reviews.averageRating
+                                      .toStringAsFixed(1),
+                              style: const TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 15,
+                                  color: _kTextDark),
+                            ),
+                          ]),
+                          Text(
+                            _reviewsLoading
+                                ? ''
+                                : '${_reviews.totalReviews} reviews',
+                            style: const TextStyle(
+                                fontSize: 11.5, color: _kTextLight),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: _kGold.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(8),
+                        border:
+                            Border.all(color: _kGold.withValues(alpha: 0.35)),
+                      ),
+                      child: Text(
+                        tent.tentType.toUpperCase(),
+                        style: const TextStyle(
+                          color: _kGold,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 11,
+                          letterSpacing: 1.2,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    _statusBadge(),
+                  ]),
+                  const SizedBox(height: 12),
+
+                  // ── Location ───────────────────────────────────────────
+                  Row(children: [
+                    const Icon(Icons.location_on, size: 16, color: _kTextMid),
+                    const SizedBox(width: 4),
+                    Text(tent.location,
+                        style: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w500,
+                            color: _kTextDark)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF3EEE7),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Text('0.1 km from Sangam',
+                          style: TextStyle(fontSize: 11.5, color: _kTextMid)),
+                    ),
+                  ]),
+                  const SizedBox(height: 16),
+
+                  // ── Surge pricing notice ───────────────────────────────
+                  // A heads-up during peak Kumbh dates, not a claim about a
+                  // discounted "before" price — the amount shown on the Book
+                  // Now bar below is the actual, real price either way.
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: _kError.withValues(alpha: 0.06),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: _kError.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: _kError.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Icon(Icons.local_fire_department_rounded,
+                            size: 17, color: _kError),
+                      ),
+                      const SizedBox(width: 10),
                       Expanded(
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
+                            Text('Surge Pricing Active',
+                                style: TextStyle(
+                                    color: _kError,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14)),
+                            const SizedBox(height: 2),
                             Text(
-                              tent.name,
-                              style: AppFonts.display(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w700,
-                                  color: _kTextDark),
-                            ),
-                            const SizedBox(height: 6),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 12, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: _kGold.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                    color: _kGold.withValues(alpha: 0.35)),
-                              ),
-                              child: Text(
-                                tent.tentType.toUpperCase(),
-                                style: const TextStyle(
-                                  color: _kGold,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 11,
-                                  letterSpacing: 1.2,
-                                ),
-                              ),
+                              'Prices increase during high-demand Kumbh dates',
+                              style: TextStyle(
+                                  color: _kError.withValues(alpha: 0.85),
+                                  fontSize: 12),
                             ),
                           ],
                         ),
                       ),
-                      _statusBadge(),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-
-                  // ── Highlighted bed configuration ─────────────────────
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 10),
-                    decoration: BoxDecoration(
-                      color: _kHeroBg,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _kGold.withValues(alpha: 0.5)),
-                    ),
-                    child: Row(children: [
-                      const Icon(Icons.bed_rounded, size: 18, color: _kGold),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          tent.bedLabel == 'Single Bed'
-                              ? 'Single Bed — perfect for solo travelers'
-                              : 'Double Bed — ideal for couples or friends',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ),
                     ]),
-                  ),
-                  const SizedBox(height: 16),
-
-                  // ── Location & capacity ───────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: _kCardBg,
-                      borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: _kBorderLight),
-                      boxShadow: [
-                        BoxShadow(
-                            color: _kHeroBg.withValues(alpha: 0.07),
-                            blurRadius: 8,
-                            offset: const Offset(0, 3)),
-                      ],
-                    ),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: _kGold.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.location_on,
-                                  size: 18, color: _kGold),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text('Location',
-                                        style: TextStyle(
-                                            fontSize: 12,
-                                            color: _kTextLight,
-                                            fontWeight: FontWeight.w500)),
-                                    Text(tent.location,
-                                        style: const TextStyle(
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w600,
-                                            color: _kTextDark)),
-                                  ]),
-                            ),
-                          ]),
-                          Divider(height: 16, color: _kBorderLight),
-                          Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _detailItem(
-                                    icon: Icons.straighten,
-                                    label: 'Size',
-                                    value: '2.0m × 2.2m × 1.8m'),
-                                _detailItem(
-                                    icon: Icons.people,
-                                    label: 'Capacity',
-                                    value: '${tent.maxOccupancy} guests'),
-                              ]),
-                        ]),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ── Why One Tent? ────────────────────────────────
-                  _sectionHeader(context, Icons.star_rounded, 'Why One Tent?'),
-                  const SizedBox(height: 12),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 3.5,
-                    children: _uspHighlights.map((h) {
-                      final color = h['color'] as Color;
-                      return Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.08),
-                          borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: color.withValues(alpha: 0.25)),
-                        ),
-                        child: Row(children: [
-                          Icon(h['icon'] as IconData, size: 15, color: color),
-                          const SizedBox(width: 6),
-                          Expanded(
-                            child: Text(
-                              h['label'] as String,
-                              style: TextStyle(
-                                  color: color,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ]),
-                      );
-                    }).toList(),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ── Interiors ─────────────────────────────────────────
-                  _sectionHeader(context, Icons.home_rounded, 'Interiors That Feel Like Home'),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Every capsule is crafted with soft lighting, natural textures, and intelligent design to help you relax, recharge, and reconnect.',
-                    style: TextStyle(fontSize: 13, color: _kTextMid, height: 1.5),
-                  ),
-                  const SizedBox(height: 12),
-                  GridView.count(
-                    crossAxisCount: 2,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    mainAxisSpacing: 10,
-                    crossAxisSpacing: 10,
-                    childAspectRatio: 2.9,
-                    children: _interiorFeatures.map((a) => Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      decoration: BoxDecoration(
-                        color: _kCardBg,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _kBorderLight),
-                        boxShadow: [
-                          BoxShadow(
-                              color: _kHeroBg.withValues(alpha: 0.05),
-                              blurRadius: 6,
-                              offset: const Offset(0, 2))
-                        ],
-                      ),
-                      child: Row(children: [
-                        Container(
-                          width: 30, height: 30,
-                          decoration: BoxDecoration(
-                            color: _kGold.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(a['icon'] as IconData,
-                              size: 14, color: _kGold),
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(a['label'] as String,
-                                  style: const TextStyle(
-                                      fontSize: 11,
-                                      fontWeight: FontWeight.bold,
-                                      color: _kTextDark),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis),
-                              Text(a['sub'] as String,
-                                  style: const TextStyle(
-                                      fontSize: 9, color: _kTextLight),
-                                  maxLines: 1,
-                                  overflow: TextOverflow.ellipsis),
-                            ],
-                          ),
-                        ),
-                      ]),
-                    )).toList(),
                   ),
                   const SizedBox(height: 24),
 
@@ -496,212 +360,26 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
                     const SizedBox(height: 24),
                   ],
 
-                  // ── Safety ────────────────────────────────────────────
-                  _sectionHeader(context, Icons.shield_rounded, 'Safe, Secure & Worry-Free'),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Your safety is our priority with 24/7 security, CCTV surveillance, and smart access systems.',
-                    style: TextStyle(fontSize: 13, color: _kTextMid, height: 1.5),
-                  ),
+                  // ── Policies ──────────────────────────────────────────
+                  _sectionHeader(context, Icons.rule_rounded, 'Policies'),
                   const SizedBox(height: 12),
                   Container(
-                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: _kCardBg,
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _kSuccess.withValues(alpha: 0.2)),
+                      border: Border.all(color: _kBorderLight),
                     ),
-                    child: Column(
-                      children: _safetyFeatures.map((s) => Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Row(children: [
-                          Container(
-                            width: 28, height: 28,
-                            decoration: BoxDecoration(
-                              color: _kSuccess.withValues(alpha: 0.10),
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(s['icon'] as IconData,
-                                size: 14, color: _kSuccess),
-                          ),
-                          const SizedBox(width: 12),
-                          Text(s['label'] as String,
-                              style: const TextStyle(
-                                  fontSize: 13,
-                                  color: _kTextDark,
-                                  fontWeight: FontWeight.w500)),
-                        ]),
-                      )).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ── Eco ───────────────────────────────────────────────
-                  _sectionHeader(context, Icons.eco_rounded, 'Sustainable & Future-Ready'),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Our capsules are built with eco-friendly materials and solar energy, minimising environmental impact while maximising comfort.',
-                    style: TextStyle(fontSize: 13, color: _kTextMid, height: 1.5),
-                  ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.all(14),
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(colors: [
-                        _kSuccess.withValues(alpha: 0.07),
-                        _kSuccess.withValues(alpha: 0.03),
-                      ]),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _kSuccess.withValues(alpha: 0.2)),
-                    ),
-                    child: Row(
-                      children: _ecoFeatures.map((e) => Expanded(
-                        child: Column(children: [
-                          Container(
-                            width: 42, height: 42,
-                            decoration: BoxDecoration(
-                                color: const Color(0xFFE8F5E9),
-                                shape: BoxShape.circle),
-                            child: Icon(e['icon'] as IconData,
-                                size: 20, color: _kSuccess),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            e['label'] as String,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                                color: _kSuccess,
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ]),
-                      )).toList(),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ── Traveler types ────────────────────────────────────
-                  _sectionHeader(context, Icons.travel_explore_rounded, 'For Global Travelers'),
-                  const SizedBox(height: 6),
-                  Text(
-                    'From solo explorers to digital nomads, our capsules are perfect for anyone seeking a unique, comfortable, and meaningful Kumbh experience.',
-                    style: TextStyle(fontSize: 13, color: _kTextMid, height: 1.5),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: _travelerTypes.map((t) => Expanded(
-                      child: Column(children: [
-                        Container(
-                          width: 44, height: 44,
-                          decoration: BoxDecoration(
-                            color: _kGold.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(t['icon'] as IconData,
-                              size: 20, color: _kGold),
-                        ),
-                        const SizedBox(height: 6),
-                        Text(
-                          t['label'] as String,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(
-                              fontSize: 10,
-                              color: _kTextMid,
-                              fontWeight: FontWeight.w500),
-                          maxLines: 2,
-                        ),
-                      ]),
-                    )).toList(),
-                  ),
-                  const SizedBox(height: 28),
-
-                  // ── Pricing ───────────────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _kCardBg,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: _kGold.withValues(alpha: 0.25)),
-                      boxShadow: [
-                        BoxShadow(
-                            color: _kHeroBg.withValues(alpha: 0.08),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4))
-                      ],
-                    ),
-                    child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(children: [
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                color: _kGold.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(Icons.local_offer,
-                                  size: 20, color: _kGold),
-                            ),
-                            const SizedBox(width: 12),
-                            Text('Pricing',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .titleMedium
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: _kTextDark)),
-                          ]),
-                          const SizedBox(height: 16),
-                          _priceRow(context, '1 Day',   tent.price1Day),
-                          _priceRow(context, '3 Days',  tent.price3Days),
-                          _priceRow(context, '7 Days',  tent.price7Days),
-                          _priceRow(context, '15 Days', tent.price15Days),
-                          _priceRow(context, '30 Days', tent.price30Days),
-                        ]),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // ── About ─────────────────────────────────────────────
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: _kGold.withValues(alpha: 0.07),
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: _kGold.withValues(alpha: 0.20)),
-                    ),
-                    child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: _kGold.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: const Icon(Icons.info_outline,
-                                size: 20, color: _kGold),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                              child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                const Text('About this tent',
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        color: _kGold)),
-                                const SizedBox(height: 6),
-                                Text(
-                                  tent.description.isNotEmpty
-                                      ? tent.description
-                                      : 'This premium capsule tent offers comfort and convenience for your Kumbh Mela experience.',
-                                  style: TextStyle(
-                                      fontSize: 13,
-                                      color: _kTextMid,
-                                      height: 1.5),
-                                ),
-                              ])),
-                        ]),
+                    child: Column(children: [
+                      _policyRow(Icons.login_rounded, 'Check-in: 12:00 PM'),
+                      Divider(height: 1, color: _kBorderLight),
+                      _policyRow(Icons.logout_rounded, 'Check-out: 11:00 AM'),
+                      Divider(height: 1, color: _kBorderLight),
+                      _policyRow(Icons.cancel_outlined,
+                          'Free cancellation before check-in'),
+                      Divider(height: 1, color: _kBorderLight),
+                      _policyRow(Icons.no_food_outlined,
+                          'No outside food allowed'),
+                    ]),
                   ),
                   const SizedBox(height: 24),
 
@@ -709,35 +387,7 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
                   _ReviewsSection(loading: _reviewsLoading, summary: _reviews),
                   const SizedBox(height: 28),
 
-                  // ── Book button ───────────────────────────────────────
-                  if (tent.isAvailable)
-                    SizedBox(
-                      width: double.infinity,
-                      height: 52,
-                      child: ElevatedButton.icon(
-                        onPressed: () => context.push('/book', extra: tent),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _kHeroBg,
-                          foregroundColor: _kCream,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(26),
-                            side: BorderSide(
-                                color: _kGold.withValues(alpha: 0.6), width: 1.5),
-                          ),
-                        ),
-                        icon: const Icon(Icons.arrow_forward, color: _kGold, size: 18),
-                        label: const Text(
-                          'Book This Tent Now',
-                          style: TextStyle(
-                              color: _kCream,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.4),
-                        ),
-                      ),
-                    )
-                  else
+                  if (!tent.isAvailable)
                     Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
@@ -756,17 +406,47 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
                       ),
                     ),
 
-                  const SizedBox(height: 20),
+                  // Extra space so the sticky price/Book bar below never
+                  // covers the last bit of scrollable content.
+                  const SizedBox(height: 100),
                 ],
               ),
             ),
           ),
         ],
       ),
+      bottomNavigationBar: _BottomBookBar(
+        tent: tent,
+        onBook: () => context.push('/book', extra: tent),
+      ),
     );
   }
 
   // ── Helpers ───────────────────────────────────────────────────────────────
+
+  Widget _photoPlaceholder() => Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [_kHeroBg, _kMaroonMid],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+        child: const Icon(Icons.cabin, size: 48, color: _kGold),
+      );
+
+  /// Full-screen swipeable, zoomable view of every real photo for this tent.
+  void _openFullPhoto(int startIndex) {
+    if (_photos.isEmpty) return;
+    Navigator.of(context).push(PageRouteBuilder(
+      opaque: false,
+      barrierColor: Colors.black,
+      pageBuilder: (_, __, ___) => _FullPhotoViewer(
+        photos: _photos,
+        initialIndex: startIndex,
+      ),
+    ));
+  }
 
   Widget _sectionHeader(BuildContext context, IconData icon, String title) {
     return Row(children: [
@@ -806,83 +486,53 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
         ]),
       );
 
-  Widget _amenityChip(IconData icon, String label) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: _kGold.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: _kGold.withValues(alpha: 0.35), width: 1.2),
-        ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 16, color: _kGold),
-          const SizedBox(width: 6),
-          Text(label,
-              style: const TextStyle(
-                  color: _kGold, fontSize: 12, fontWeight: FontWeight.w600)),
+  Widget _policyRow(IconData icon, String label) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: _kGold.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(icon, size: 16, color: _kGold),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(
+                    fontSize: 13.5,
+                    color: _kTextDark,
+                    fontWeight: FontWeight.w500)),
+          ),
         ]),
       );
 
-  Widget _priceRow(BuildContext context, String label, double price) {
-    final currency = CurrencyUtils.currencyForCountry(
-        context.watch<AuthProvider>().visitor?.country);
-    final rates = context.watch<TentProvider>().exchangeRates;
-    final priceLabel =
-        CurrencyUtils.formatPrice(price, currency: currency, rates: rates);
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(label,
-                style: const TextStyle(
-                    fontSize: 14,
-                    color: _kTextMid,
-                    fontWeight: FontWeight.w500)),
-            // Flexible so a longer converted amount (multi-day AED/EUR
-            // totals get long) shrinks and ellipsizes instead of
-            // overflowing this row.
-            Flexible(
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                decoration: BoxDecoration(
-                  color: _kGold.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: _kGold.withValues(alpha: 0.30)),
-                ),
-                child: Text(priceLabel,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: _kGold)),
-              ),
+  Widget _amenityChip(IconData icon, String label) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF3EEE7),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Container(
+            width: 18,
+            height: 18,
+            decoration: const BoxDecoration(
+              color: _kGold,
+              shape: BoxShape.circle,
             ),
-          ]),
-    );
-  }
-
-  Widget _detailItem(
-          {required IconData icon,
-          required String label,
-          required String value}) =>
-      Column(children: [
-        Icon(icon, color: _kGold, size: 20),
-        const SizedBox(height: 6),
-        Text(label,
-            style: const TextStyle(
-                fontSize: 11,
-                color: _kTextLight,
-                fontWeight: FontWeight.w500)),
-        const SizedBox(height: 4),
-        Text(value,
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: _kTextDark),
-            textAlign: TextAlign.center),
-      ]);
+            child: const Icon(Icons.check, size: 12, color: Colors.white),
+          ),
+          const SizedBox(width: 8),
+          Text(label,
+              style: const TextStyle(
+                  color: _kTextDark,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600)),
+        ]),
+      );
 
   IconData _iconFor(String amenity) {
     switch (amenity.toLowerCase()) {
@@ -901,13 +551,92 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
     }
   }
 }
+// ── Full-screen photo viewer ─────────────────────────────────────────────────
+class _FullPhotoViewer extends StatefulWidget {
+  const _FullPhotoViewer({required this.photos, required this.initialIndex});
+  final List<String> photos;
+  final int initialIndex;
+
+  @override
+  State<_FullPhotoViewer> createState() => _FullPhotoViewerState();
+}
+
+class _FullPhotoViewerState extends State<_FullPhotoViewer> {
+  late final PageController _controller =
+      PageController(initialPage: widget.initialIndex);
+  late int _index = widget.initialIndex;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Stack(children: [
+        PageView.builder(
+          controller: _controller,
+          itemCount: widget.photos.length,
+          onPageChanged: (i) => setState(() => _index = i),
+          itemBuilder: (_, i) => Center(
+            child: InteractiveViewer(
+              child: widget.photos[i].startsWith('assets/')
+                  ? Image.asset(widget.photos[i], fit: BoxFit.contain)
+                  : Image.network(AppConstants.fileUrl(widget.photos[i]),
+                      fit: BoxFit.contain),
+            ),
+          ),
+        ),
+        Positioned(
+          top: MediaQuery.of(context).padding.top + 8,
+          left: 8,
+          child: IconButton(
+            icon: const Icon(Icons.close, color: Colors.white, size: 28),
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ),
+        if (widget.photos.length > 1)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 16,
+            left: 0,
+            right: 0,
+            child: Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.black45,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${_index + 1} / ${widget.photos.length}',
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ),
+      ]),
+    );
+  }
+}
+
 // ── Wishlist heart ───────────────────────────────────────────────────────────
 // Its own widget so the (stateless) detail screen doesn't need to rebuild
 // wholesale, and so the saved state survives coming back to this screen.
 class _WishlistHeartButton extends StatefulWidget {
-  const _WishlistHeartButton({required this.tent});
+  const _WishlistHeartButton({required this.tent, this.light = true});
 
   final CapsuleTent tent;
+
+  /// True (default) renders a light/cream icon for a dark or photo
+  /// background; false renders a dark icon for sitting on a white circle.
+  final bool light;
 
   @override
   State<_WishlistHeartButton> createState() => _WishlistHeartButtonState();
@@ -957,9 +686,84 @@ class _WishlistHeartButtonState extends State<_WishlistHeartButton> {
       onPressed: _busy ? null : _toggle,
       icon: Icon(
         saved ? Icons.favorite : Icons.favorite_outline,
-        color: saved ? _kError : _kCream,
+        color: saved ? _kError : (widget.light ? _kCream : _kTextMid),
       ),
       tooltip: saved ? 'Remove from wishlist' : 'Save to wishlist',
+    );
+  }
+}
+
+// ── Sticky bottom price + Book bar ───────────────────────────────────────────
+class _BottomBookBar extends StatelessWidget {
+  const _BottomBookBar({required this.tent, required this.onBook});
+
+  final CapsuleTent tent;
+  final VoidCallback onBook;
+
+  @override
+  Widget build(BuildContext context) {
+    final currency = CurrencyUtils.currencyForCountry(
+        context.watch<AuthProvider>().visitor?.country);
+    final rates = context.watch<TentProvider>().exchangeRates;
+    final priceLabel = CurrencyUtils.formatPrice(tent.price1Day,
+        currency: currency, rates: rates);
+
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
+        decoration: BoxDecoration(
+          color: _kCardBg,
+          border: Border(top: BorderSide(color: _kBorderLight)),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 12,
+                offset: const Offset(0, -4)),
+          ],
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    priceLabel,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: _kTextDark),
+                  ),
+                  const Text('per night + taxes',
+                      style: TextStyle(fontSize: 11.5, color: _kTextLight)),
+                ],
+              ),
+            ),
+            const SizedBox(width: 14),
+            ElevatedButton.icon(
+              onPressed: tent.isAvailable ? onBook : null,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kGold,
+                disabledBackgroundColor: _kBorderLight,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 26, vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(28)),
+              ),
+              icon: const Icon(Icons.bolt_rounded, size: 18),
+              label: const Text('Book Now',
+                  style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15)),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

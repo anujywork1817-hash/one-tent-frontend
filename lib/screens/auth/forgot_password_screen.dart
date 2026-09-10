@@ -5,15 +5,13 @@ import 'package:provider/provider.dart';
 import '../../providers/providers.dart';
 
 // ─── One Tent Design Tokens ───────────────────────────────────────────────
-const Color _kBgDeep = Color(0xFF0D0401);
-const Color _kMaroon = Color(0xFF4A1000);
 const Color _kGold = Color(0xFFD4891A);
-const Color _kCream = Color(0xFFF5E6C8);
-const Color _kBodyBg = Color(0xFFF2EAE0);
+const Color _kBodyBg = Color(0xFFFFFFFF);
 const Color _kCardBg = Color(0xFFFFFFFF);
-const Color _kTextDark = Color(0xFF2C1A0E);
-const Color _kTextMuted = Color(0xFF8A6A50);
-const Color _kDivider = Color(0xFFEDE0D4);
+const Color _kFieldFill = Color(0xFFF3EEE7);
+const Color _kTextDark = Color(0xFF2D0F05);
+const Color _kTextMuted = Color(0xFF7A4A30);
+const Color _kDivider = Color(0xFFDDD0C4);
 const Color _kGreen = Color(0xFF2E7D32);
 const Color _kRed = Color(0xFFC0392B);
 // ─────────────────────────────────────────────────────────────────────────────
@@ -114,7 +112,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
       backgroundColor: _kBodyBg,
       body: Column(
         children: [
-          // ── Dark maroon hero header ──────────────────────────────────
           _ForgotHeader(),
 
           // ── Scrollable cream body ────────────────────────────────────
@@ -137,21 +134,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Lock icon box
+        // Lock icon
         Container(
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            color: _kMaroon,
+            color: _kGold.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _kGold.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: _kMaroon.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: const Icon(Icons.lock_reset_rounded, color: _kGold, size: 30),
         ),
@@ -176,37 +165,19 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         // Email field
         Container(
           decoration: BoxDecoration(
-            color: _kCardBg,
+            color: _kFieldFill,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _kDivider),
-            boxShadow: [
-              BoxShadow(
-                color: _kMaroon.withValues(alpha: 0.04),
-                blurRadius: 8,
-              ),
-            ],
           ),
           child: TextField(
             controller: _emailCtrl,
             keyboardType: TextInputType.emailAddress,
             style: const TextStyle(color: _kTextDark, fontSize: 14),
             decoration: InputDecoration(
-              // The global theme's filled:true paints a near-black fill that
-              // makes this screen's dark text unreadable — this screen draws
-              // its own light card background instead.
               filled: false,
               labelText: 'Email Address',
               labelStyle: const TextStyle(color: _kTextMuted, fontSize: 13),
-              prefixIcon: Container(
-                margin: const EdgeInsets.all(10),
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: _kMaroon,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child:
-                    const Icon(Icons.email_outlined, color: _kGold, size: 16),
-              ),
+              prefixIcon:
+                  const Icon(Icons.email_outlined, color: _kTextMuted, size: 20),
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -224,7 +195,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             decoration: BoxDecoration(
               color: _kRed.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _kRed.withValues(alpha: 0.3)),
             ),
             child: Row(children: [
               const Icon(Icons.error_outline, color: _kRed, size: 16),
@@ -281,16 +251,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           width: 64,
           height: 64,
           decoration: BoxDecoration(
-            color: _kMaroon,
+            color: _kGold.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: _kGold.withValues(alpha: 0.5)),
-            boxShadow: [
-              BoxShadow(
-                color: _kMaroon.withValues(alpha: 0.3),
-                blurRadius: 12,
-                offset: const Offset(0, 4),
-              ),
-            ],
           ),
           child: const Icon(Icons.mark_email_read_outlined,
               color: _kGold, size: 30),
@@ -323,12 +285,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         // Code field
         Container(
           decoration: BoxDecoration(
-            color: _kCardBg,
+            color: _kFieldFill,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _kDivider),
-            boxShadow: [
-              BoxShadow(color: _kMaroon.withValues(alpha: 0.04), blurRadius: 8),
-            ],
           ),
           child: TextField(
             controller: _codeCtrl,
@@ -357,12 +315,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
         // New password field
         Container(
           decoration: BoxDecoration(
-            color: _kCardBg,
+            color: _kFieldFill,
             borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: _kDivider),
-            boxShadow: [
-              BoxShadow(color: _kMaroon.withValues(alpha: 0.04), blurRadius: 8),
-            ],
           ),
           child: TextField(
             controller: _newPassCtrl,
@@ -372,15 +326,8 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               filled: false,
               labelText: 'New Password',
               labelStyle: const TextStyle(color: _kTextMuted, fontSize: 13),
-              prefixIcon: Container(
-                margin: const EdgeInsets.all(10),
-                padding: const EdgeInsets.all(6),
-                decoration: BoxDecoration(
-                  color: _kMaroon,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.lock_outline, color: _kGold, size: 16),
-              ),
+              prefixIcon:
+                  const Icon(Icons.lock_outline, color: _kTextMuted, size: 20),
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
@@ -397,7 +344,6 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
             decoration: BoxDecoration(
               color: _kRed.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _kRed.withValues(alpha: 0.3)),
             ),
             child: Row(children: [
               const Icon(Icons.error_outline, color: _kRed, size: 16),
@@ -441,7 +387,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           decoration: BoxDecoration(
             color: _kGreen.withValues(alpha: 0.1),
             shape: BoxShape.circle,
-            border: Border.all(color: _kGreen.withValues(alpha: 0.3), width: 2),
+            
           ),
           child:
               const Icon(Icons.check_circle_outline, color: _kGreen, size: 46),
@@ -473,51 +419,33 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   }
 }
 
-// ── Dark Maroon Hero Header ────────────────────────────────────────────────────
+// ── Header — same plain white chrome as every other screen ─────────────────
 class _ForgotHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: _kMaroon,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-              color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
+        color: _kCardBg,
+        border: Border(bottom: BorderSide(color: _kDivider)),
       ),
       child: SafeArea(
         bottom: false,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
+          padding: const EdgeInsets.fromLTRB(4, 8, 16, 12),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.arrow_back_ios_new,
-                    color: _kCream, size: 20),
+                icon: const Icon(Icons.chevron_left,
+                    color: _kTextDark, size: 28),
                 onPressed: () => Navigator.of(context).pop(),
               ),
-              const Expanded(
-                child: Text(
-                  'Reset Password',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: _kCream,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 18,
-                    letterSpacing: 0.3,
-                  ),
+              const Text(
+                'Reset Password',
+                style: TextStyle(
+                  color: _kTextDark,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
                 ),
-              ),
-              // Gold lock badge
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  border: Border.all(color: _kGold, width: 1.5),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.lock_outlined, color: _kGold, size: 18),
               ),
             ],
           ),
@@ -543,19 +471,8 @@ class _KumbhButton extends StatelessWidget {
         width: double.infinity,
         padding: const EdgeInsets.symmetric(vertical: 16),
         decoration: BoxDecoration(
-          color: onTap == null ? _kMaroon.withValues(alpha: 0.5) : _kMaroon,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-              color: _kGold.withValues(alpha: onTap == null ? 0.2 : 0.6)),
-          boxShadow: onTap == null
-              ? []
-              : [
-                  BoxShadow(
-                    color: _kMaroon.withValues(alpha: 0.35),
-                    blurRadius: 12,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
+          color: onTap == null ? _kGold.withValues(alpha: 0.4) : _kGold,
+          borderRadius: BorderRadius.circular(16),
         ),
         child: isLoading
             ? const Center(
@@ -563,15 +480,15 @@ class _KumbhButton extends StatelessWidget {
                   width: 22,
                   height: 22,
                   child: CircularProgressIndicator(
-                      color: _kGold, strokeWidth: 2.5),
+                      color: Colors.white, strokeWidth: 2.5),
                 ),
               )
             : Text(
                 label,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: _kCream,
-                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
                   fontSize: 15,
                   letterSpacing: 0.3,
                 ),

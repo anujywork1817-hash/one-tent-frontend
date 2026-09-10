@@ -11,18 +11,15 @@ import '../../providers/providers.dart';
 // ─────────────────────────────────────────────
 //  One Tent — Split Theme Tokens
 // ─────────────────────────────────────────────
-const _kHeroBg      = Color(0xFF3D0F05);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kBodyBg      = Color(0xFFFFFFFF);
 const _kCardBg      = Color(0xFFFFFFFF);
 const _kChipBg      = Color(0xFFEDE0D4);
 const _kBorderLight = Color(0xFFDDD0C4);
 const _kGold        = Color(0xFFD4891A);
-const _kGoldLight   = Color(0xFFE8A93A);
 const _kMaroon      = Color(0xFF5C1A08);
 const _kTextDark    = Color(0xFF2D0F05);
 const _kTextMid     = Color(0xFF7A4A30);
 const _kTextLight   = Color(0xFFA07050);
-const _kCream       = Color(0xFFF5E6C8);
 const _kErrorColor  = Color(0xFFC0392B);
 
 /// What the photo bottom sheet returned. `remove` is why this isn't just an
@@ -213,128 +210,25 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       body: CustomScrollView(
         slivers: [
 
-          // ── App Bar ───────────────────────────────────────
+          // ── Header — same plain white chrome as every other screen ──
           SliverAppBar(
-            expandedHeight: 220,
             pinned: true,
-            backgroundColor: _kHeroBg,
+            backgroundColor: _kCardBg,
+            surfaceTintColor: _kCardBg,
             elevation: 0,
+            scrolledUnderElevation: 0,
             leading: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new, color: _kCream, size: 18),
+              icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
               onPressed: () => context.pop(),
             ),
             title: const Text('Edit Profile',
                 style: TextStyle(
-                    color: _kCream, fontSize: 17, fontWeight: FontWeight.w600)),
-            centerTitle: true,
-            flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Color(0xFF5C1A08), Color(0xFF3D0F05)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
-                child: Stack(children: [
-                  Positioned(
-                    top: -40, right: -40,
-                    child: Container(
-                      width: 160, height: 160,
-                      decoration: BoxDecoration(
-                        color: _kGold.withValues(alpha: 0.08),
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                  ),
-                  SafeArea(
-                    child: Center(
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const SizedBox(height: 36),
-                          GestureDetector(
-                            onTap: _pickImage,
-                            child: Stack(children: [
-                              Container(
-                                width: 88, height: 88,
-                                decoration: BoxDecoration(
-                                  color: _kChipBg,
-                                  borderRadius: BorderRadius.circular(22),
-                                  border: Border.all(
-                                      color: _kGold.withValues(alpha: 0.5),
-                                      width: 2),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withValues(alpha: 0.2),
-                                      blurRadius: 12,
-                                      offset: const Offset(0, 6),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(20),
-                                  child: _pickedImage != null
-                                      ? Image.file(_pickedImage!, fit: BoxFit.cover)
-                                      : (!_removeImage &&
-                                              v?.profileImageUrl?.isNotEmpty == true
-                                          ? Image.network(
-                                              AppConstants.fileUrl(v!.profileImageUrl!),
-                                              fit: BoxFit.cover,
-                                              errorBuilder: (_, __, ___) =>
-                                                  _avatarFallback(v.fullName))
-                                          : _avatarFallback(v?.fullName ?? '?')),
-                                ),
-                              ),
-                              Positioned(
-                                right: 0, bottom: 0,
-                                child: Container(
-                                  padding: const EdgeInsets.all(6),
-                                  decoration: BoxDecoration(
-                                    color: _kGold,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: _kHeroBg, width: 2),
-                                  ),
-                                  child: const Icon(Icons.camera_alt,
-                                      color: Colors.white, size: 12),
-                                ),
-                              ),
-                            ]),
-                          ),
-                          const SizedBox(height: 8),
-                          Text('Tap to change photo',
-                              style: TextStyle(
-                                  color: _kCream.withValues(alpha: 0.6),
-                                  fontSize: 11)),
-                          if (_pickedImage != null || _removeImage) ...[
-                            const SizedBox(height: 4),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 10, vertical: 3),
-                              decoration: BoxDecoration(
-                                color: _removeImage
-                                    ? _kErrorColor.withValues(alpha: 0.25)
-                                    : _kGold.withValues(alpha: 0.2),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                  _removeImage
-                                      ? 'Photo will be removed on save'
-                                      : 'New photo selected',
-                                  style: TextStyle(
-                                      color: _removeImage
-                                          ? _kCream
-                                          : _kGoldLight,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w500)),
-                            ),
-                          ],
-                        ],
-                      ),
-                    ),
-                  ),
-                ]),
-              ),
+                    color: _kTextDark,
+                    fontWeight: FontWeight.w700,
+                    fontSize: 17)),
+            bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(1),
+              child: Container(height: 1, color: _kBorderLight),
             ),
           ),
 
@@ -343,11 +237,95 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             child: Container(
               color: _kBodyBg,
               padding: const EdgeInsets.all(20),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+              child: Column(
+                children: [
+                  // ── Avatar picker ──────────────────────────
+                  Center(
+                    child: Column(
+                      children: [
+                        GestureDetector(
+                          onTap: _pickImage,
+                          child: Stack(children: [
+                            Container(
+                              width: 88, height: 88,
+                              decoration: BoxDecoration(
+                                color: _kChipBg,
+                                borderRadius: BorderRadius.circular(22),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _kMaroon.withValues(alpha: 0.12),
+                                    blurRadius: 16,
+                                    offset: const Offset(0, 6),
+                                  ),
+                                ],
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(22),
+                                child: _pickedImage != null
+                                    ? Image.file(_pickedImage!, fit: BoxFit.cover)
+                                    : (!_removeImage &&
+                                            v?.profileImageUrl?.isNotEmpty == true
+                                        ? Image.network(
+                                            AppConstants.fileUrl(v!.profileImageUrl!),
+                                            fit: BoxFit.cover,
+                                            errorBuilder: (_, __, ___) =>
+                                                _avatarFallback(v.fullName))
+                                        : _avatarFallback(v?.fullName ?? '?')),
+                              ),
+                            ),
+                            Positioned(
+                              right: 0, bottom: 0,
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: _kGold,
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                      color: _kCardBg, width: 2),
+                                ),
+                                child: const Icon(Icons.camera_alt,
+                                    color: Colors.white, size: 12),
+                              ),
+                            ),
+                          ]),
+                        ),
+                        const SizedBox(height: 8),
+                        Text('Tap to change photo',
+                            style: const TextStyle(
+                                color: _kTextLight, fontSize: 12)),
+                        if (_pickedImage != null || _removeImage) ...[
+                          const SizedBox(height: 6),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 10, vertical: 3),
+                            decoration: BoxDecoration(
+                              color: _removeImage
+                                  ? _kErrorColor.withValues(alpha: 0.10)
+                                  : _kGold.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Text(
+                                _removeImage
+                                    ? 'Photo will be removed on save'
+                                    : 'New photo selected',
+                                style: TextStyle(
+                                    color: _removeImage
+                                        ? _kErrorColor
+                                        : _kGold,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
 
                     const Text('Basic Details',
                         style: TextStyle(
@@ -360,12 +338,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       decoration: BoxDecoration(
                         color: _kCardBg,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: _kBorderLight),
                         boxShadow: [
                           BoxShadow(
                               color: _kMaroon.withValues(alpha: 0.06),
-                              blurRadius: 12,
-                              offset: const Offset(0, 3)),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6)),
                         ],
                       ),
                       padding: const EdgeInsets.all(20),
@@ -391,7 +368,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       decoration: BoxDecoration(
                         color: _kGold.withValues(alpha: 0.08),
                         borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: _kGold.withValues(alpha: 0.3)),
                       ),
                       child: const Row(children: [
                         Icon(Icons.info_outline, color: _kGold, size: 16),
@@ -414,10 +390,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                         padding: const EdgeInsets.symmetric(
                             horizontal: 14, vertical: 10),
                         decoration: BoxDecoration(
-                          color: _kErrorColor.withValues(alpha: 0.10),
+                          color: _kErrorColor.withValues(alpha: 0.09),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(
-                              color: _kErrorColor.withValues(alpha: 0.35)),
                         ),
                         child: Row(children: [
                           const Icon(Icons.error_outline,
@@ -440,24 +414,23 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                       child: ElevatedButton(
                         onPressed: _loading ? null : _save,
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: _kMaroon,
-                          disabledBackgroundColor: _kMaroon.withValues(alpha: 0.5),
+                          backgroundColor: _kGold,
+                          foregroundColor: Colors.white,
+                          disabledBackgroundColor: _kGold.withValues(alpha: 0.4),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(26),
-                            side: BorderSide(color: _kGold.withValues(alpha: 0.5)),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
                         child: _loading
                             ? const SizedBox(
                                 width: 22, height: 22,
                                 child: CircularProgressIndicator(
-                                    color: _kCream, strokeWidth: 2))
+                                    color: Colors.white, strokeWidth: 2))
                             : const Text('Save Changes',
                                 style: TextStyle(
-                                    color: _kCream,
                                     fontSize: 15,
-                                    fontWeight: FontWeight.w600,
+                                    fontWeight: FontWeight.w800,
                                     letterSpacing: 0.3)),
                       ),
                     ),
@@ -478,8 +451,10 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                     ),
 
                     const SizedBox(height: 20),
-                  ],
-                ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
           ),

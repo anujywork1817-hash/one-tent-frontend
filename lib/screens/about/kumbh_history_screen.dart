@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-const _kHeroBg      = Color(0xFF3D0F05);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kHeroBg      = Color(0xFF4A1000);
+const _kBodyBg      = Color(0xFFFFFFFF);
 const _kCardBg      = Color(0xFFFFFFFF);
 const _kBorderLight = Color(0xFFDDD0C4);
 const _kGold        = Color(0xFFD4891A);
@@ -130,37 +130,20 @@ class KumbhHistoryScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: _kBodyBg,
       appBar: AppBar(
-        backgroundColor: _kHeroBg,
+        backgroundColor: _kCardBg,
+        surfaceTintColor: _kCardBg,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _kGold.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _kGold.withValues(alpha: 0.40)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: _kCream, size: 20),
-            onPressed: () => context.pop(),
-          ),
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
+          onPressed: () => context.pop(),
         ),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: const Icon(Icons.info_outline, color: _kGold, size: 16),
-          ),
-          const SizedBox(width: 10),
-          const Text('History of Kumbh Mela',
-              style: TextStyle(
-                  color: _kCream, fontWeight: FontWeight.w600, fontSize: 16)),
-        ]),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        title: const Text('History of Kumbh Mela',
+            style: TextStyle(
+                color: _kTextDark, fontWeight: FontWeight.w700, fontSize: 16)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _kBorderLight),
         ),
       ),
       body: SingleChildScrollView(
@@ -173,7 +156,6 @@ class KumbhHistoryScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: _kGold.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _kGold.withValues(alpha: 0.25)),
               ),
               child: const Row(children: [
                 Icon(Icons.temple_hindu, color: _kGold, size: 22),
@@ -388,12 +370,11 @@ class KumbhHistoryScreen extends StatelessWidget {
         decoration: BoxDecoration(
           color: _kCardBg,
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: _kBorderLight),
           boxShadow: [
             BoxShadow(
                 color: _kHeroBg.withValues(alpha: 0.06),
-                blurRadius: 10,
-                offset: const Offset(0, 3)),
+                blurRadius: 14,
+                offset: const Offset(0, 5)),
           ],
         ),
         child: child,

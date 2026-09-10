@@ -6,12 +6,12 @@ import '../../data/models/models.dart';
 import '../../providers/providers.dart';
 import '../../widgets/tent_card.dart';
 
-const _kHeroBg      = Color(0xFF3D0F05);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kBodyBg      = Color(0xFFFFFFFF);
+const _kCardBg      = Color(0xFFFFFFFF);
+const _kBorderLight = Color(0xFFDDD0C4);
 const _kGold        = Color(0xFFD4891A);
 const _kTextDark    = Color(0xFF2D0F05);
 const _kTextMid     = Color(0xFF7A4A30);
-const _kCream       = Color(0xFFF5E6C8);
 const _kError       = Color(0xFFC0392B);
 
 class WishlistScreen extends StatefulWidget {
@@ -39,8 +39,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
 
     final failed = wishlist.error != null;
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      content: Text(failed ? wishlist.error! : 'Removed from your wishlist'),
-      backgroundColor: failed ? _kError : _kHeroBg,
+      content: Text(failed ? wishlist.error! : 'Removed from your wishlist',
+          style: const TextStyle(color: Colors.white)),
+      backgroundColor: failed ? _kError : _kTextDark,
       behavior: SnackBarBehavior.floating,
       duration: const Duration(seconds: 2),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -54,37 +55,20 @@ class _WishlistScreenState extends State<WishlistScreen> {
     return Scaffold(
       backgroundColor: _kBodyBg,
       appBar: AppBar(
-        backgroundColor: _kHeroBg,
+        backgroundColor: _kCardBg,
+        surfaceTintColor: _kCardBg,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _kGold.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _kGold.withValues(alpha: 0.40)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: _kCream, size: 20),
-            onPressed: () => context.pop(),
-          ),
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
+          onPressed: () => context.pop(),
         ),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: const Icon(Icons.favorite, color: _kGold, size: 16),
-          ),
-          const SizedBox(width: 10),
-          const Text('My Wishlist',
-              style: TextStyle(
-                  color: _kCream, fontWeight: FontWeight.w600, fontSize: 17)),
-        ]),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        title: const Text('My Wishlist',
+            style: TextStyle(
+                color: _kTextDark, fontWeight: FontWeight.w700, fontSize: 17)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _kBorderLight),
         ),
       ),
       body: _body(wishlist),
@@ -108,8 +92,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
           subtitle: wishlist.error!,
           action: FilledButton(
             onPressed: () => wishlist.load(force: true),
-            style: FilledButton.styleFrom(backgroundColor: _kHeroBg),
-            child: const Text('Try again', style: TextStyle(color: _kCream)),
+            style: FilledButton.styleFrom(backgroundColor: _kGold, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            child: const Text('Try again', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
         ),
       );
@@ -124,8 +108,8 @@ class _WishlistScreenState extends State<WishlistScreen> {
           subtitle: 'Tap the heart on any tent to save it here for later.',
           action: FilledButton(
             onPressed: () => context.go('/search'),
-            style: FilledButton.styleFrom(backgroundColor: _kHeroBg),
-            child: const Text('Browse tents', style: TextStyle(color: _kCream)),
+            style: FilledButton.styleFrom(backgroundColor: _kGold, shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+            child: const Text('Browse tents', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700)),
           ),
         ),
       );

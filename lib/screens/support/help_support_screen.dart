@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-const _kHeroBg      = Color(0xFF3D0F05);
-const _kBodyBg      = Color(0xFFF2EAE0);
+const _kMaroon      = Color(0xFF4A1000);
+const _kBodyBg      = Color(0xFFFFFFFF);
 const _kCardBg      = Color(0xFFFFFFFF);
 const _kBorderLight = Color(0xFFDDD0C4);
 const _kGold        = Color(0xFFD4891A);
 const _kTextDark    = Color(0xFF2D0F05);
 const _kTextMid     = Color(0xFF7A4A30);
 const _kTextLight   = Color(0xFFA07050);
-const _kCream       = Color(0xFFF5E6C8);
 const _kSuccess     = Color(0xFF2E7D32);
 
 class HelpSupportScreen extends StatelessWidget {
@@ -35,37 +34,20 @@ class HelpSupportScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: _kBodyBg,
       appBar: AppBar(
-        backgroundColor: _kHeroBg,
+        backgroundColor: _kCardBg,
+        surfaceTintColor: _kCardBg,
         elevation: 0,
-        leading: Container(
-          margin: const EdgeInsets.all(8),
-          decoration: BoxDecoration(
-            color: _kGold.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(color: _kGold.withValues(alpha: 0.40)),
-          ),
-          child: IconButton(
-            icon: const Icon(Icons.arrow_back, color: _kCream, size: 20),
-            onPressed: () => context.pop(),
-          ),
+        scrolledUnderElevation: 0,
+        leading: IconButton(
+          icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
+          onPressed: () => context.pop(),
         ),
-        title: Row(children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-            ),
-            child: const Icon(Icons.help_outline, color: _kGold, size: 16),
-          ),
-          const SizedBox(width: 10),
-          const Text('Help & Support',
-              style: TextStyle(
-                  color: _kCream, fontWeight: FontWeight.w600, fontSize: 17)),
-        ]),
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+        title: const Text('Help & Support',
+            style: TextStyle(
+                color: _kTextDark, fontWeight: FontWeight.w700, fontSize: 17)),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(height: 1, color: _kBorderLight),
         ),
       ),
       body: SingleChildScrollView(
@@ -78,7 +60,6 @@ class HelpSupportScreen extends StatelessWidget {
               decoration: BoxDecoration(
                 color: _kSuccess.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: _kSuccess.withValues(alpha: 0.25)),
               ),
               child: const Row(children: [
                 Icon(Icons.support_agent, color: _kSuccess, size: 22),
@@ -103,14 +84,17 @@ class HelpSupportScreen extends StatelessWidget {
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _kHeroBg,
+                  gradient: const LinearGradient(
+                    colors: [_kMaroon, Color(0xFF6B1A00)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _kGold.withValues(alpha: 0.5)),
                   boxShadow: [
                     BoxShadow(
-                        color: _kHeroBg.withValues(alpha: 0.25),
-                        blurRadius: 10,
-                        offset: const Offset(0, 3)),
+                        color: _kMaroon.withValues(alpha: 0.25),
+                        blurRadius: 14,
+                        offset: const Offset(0, 5)),
                   ],
                 ),
                 child: Row(children: [
@@ -132,10 +116,11 @@ class HelpSupportScreen extends StatelessWidget {
                             style: TextStyle(
                                 fontSize: 14.5,
                                 fontWeight: FontWeight.w700,
-                                color: _kCream)),
+                                color: Colors.white)),
                         SizedBox(height: 2),
                         Text('Get instant answers about booking, GST & more',
-                            style: TextStyle(fontSize: 12, color: _kCream)),
+                            style: TextStyle(
+                                fontSize: 12, color: Colors.white70)),
                       ],
                     ),
                   ),
@@ -191,12 +176,11 @@ class _ContactCard extends StatelessWidget {
       decoration: BoxDecoration(
         color: _kCardBg,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _kBorderLight),
         boxShadow: [
           BoxShadow(
-              color: _kHeroBg.withValues(alpha: 0.06),
-              blurRadius: 10,
-              offset: const Offset(0, 3)),
+              color: _kMaroon.withValues(alpha: 0.06),
+              blurRadius: 14,
+              offset: const Offset(0, 5)),
         ],
       ),
       child: Row(children: [
@@ -231,18 +215,17 @@ class _ContactCard extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
             decoration: BoxDecoration(
-              color: _kHeroBg,
+              color: _kGold,
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: _kGold.withValues(alpha: 0.5)),
             ),
             child: Row(mainAxisSize: MainAxisSize.min, children: [
-              Icon(actionIcon, size: 15, color: _kGold),
+              Icon(actionIcon, size: 15, color: Colors.white),
               const SizedBox(width: 6),
               Text(actionLabel,
                   style: const TextStyle(
-                      color: _kCream,
+                      color: Colors.white,
                       fontSize: 13,
-                      fontWeight: FontWeight.w600)),
+                      fontWeight: FontWeight.w700)),
             ]),
           ),
         ),

@@ -1,7 +1,4 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
 
@@ -30,7 +27,6 @@ class MainScaffold extends StatefulWidget {
 
 class _MainScaffoldState extends State<MainScaffold> {
   late int _currentIndex;
-  DateTime? _lastBackPress;
 
   final List<Widget> _screens = [
     const HomeScreen(),
@@ -56,44 +52,34 @@ class _MainScaffoldState extends State<MainScaffold> {
     });
   }
 
+  // The route each tab owns. The bottom nav navigates (context.go) rather
+  // than just flipping local state, so the current tab is always in step
+  // with the route — which is what lets an app-wide back-to-Home
+  // (go('/home')) reliably land on the Home tab from anywhere.
+  static const _tabRoutes = ['/home', '/search', '/my-bookings', '/news', '/profile'];
+
   @override
   void didUpdateWidget(covariant MainScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // Each bottom-nav route (/home, /my-bookings, ...) reuses this same
-    // MainScaffold widget. Without this, a stale _currentIndex from a
-    // previous navigation kept showing whichever tab was selected before —
-    // e.g. tapping "View My Bookings" could land back on the Home tab.
+    // All five bottom-nav routes share one page key, so switching tabs
+    // rebuilds this same widget with a new initialIndex instead of pushing
+    // a route. Keep the shown tab in step with it.
     if (widget.initialIndex != oldWidget.initialIndex) {
       _currentIndex = widget.initialIndex;
     }
   }
 
-  Future<bool> _handleBack() async {
-    if (_currentIndex != 0) {
-      setState(() => _currentIndex = 0);
-      return false;
-    }
-    final now = DateTime.now();
-    if (_lastBackPress == null ||
-        now.difference(_lastBackPress!) > const Duration(seconds: 2)) {
-      _lastBackPress = now;
-      Fluttertoast.showToast(msg: 'Press back again to exit');
-      return false;
-    }
-    return true;
+  void _onTabTapped(int index) {
+    if (index == _currentIndex) return;
+    context.go(_tabRoutes[index]);
   }
 
   @override
   Widget build(BuildContext context) {
-    return PopScope(
-      canPop: false,
-      onPopInvokedWithResult: (didPop, _) async {
-        if (didPop) return;
-        if (await _handleBack()) {
-          SystemNavigator.pop();
-        }
-      },
-      child: Scaffold(
+    // Back handling for the whole app lives in AppBackScope (which wraps this
+    // shell too): a non-Home tab's back goes to '/home'; '/home' back runs
+    // the tap-again-to-exit gate.
+    return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
         children: _screens,
@@ -118,16 +104,15 @@ class _MainScaffoldState extends State<MainScaffold> {
             // would overflow. This always divides the available width evenly.
             child: Row(
               children: [
-                Expanded(child: _NavItem(icon: Icons.home_outlined,         activeIcon: Icons.home,            label: 'Home',     index: 0, currentIndex: _currentIndex, onTap: () => setState(() => _currentIndex = 0))),
-                Expanded(child: _NavItem(icon: Icons.search_outlined,       activeIcon: Icons.search,          label: 'Search',   index: 1, currentIndex: _currentIndex, onTap: () => setState(() => _currentIndex = 1))),
-                Expanded(child: _NavItem(icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month, label: 'Bookings', index: 2, currentIndex: _currentIndex, onTap: () => setState(() => _currentIndex = 2))),
-                Expanded(child: _NavItem(icon: Icons.campaign_outlined,     activeIcon: Icons.campaign,        label: 'News',     index: 3, currentIndex: _currentIndex, onTap: () => setState(() => _currentIndex = 3))),
-                Expanded(child: _NavItem(icon: Icons.person_outline,        activeIcon: Icons.person,          label: 'Profile',  index: 4, currentIndex: _currentIndex, onTap: () => setState(() => _currentIndex = 4))),
+                Expanded(child: _NavItem(icon: Icons.home_outlined,         activeIcon: Icons.home,            label: 'Home',     index: 0, currentIndex: _currentIndex, onTap: () => _onTabTapped(0))),
+                Expanded(child: _NavItem(icon: Icons.search_outlined,       activeIcon: Icons.search,          label: 'Search',   index: 1, currentIndex: _currentIndex, onTap: () => _onTabTapped(1))),
+                Expanded(child: _NavItem(icon: Icons.calendar_month_outlined, activeIcon: Icons.calendar_month, label: 'Bookings', index: 2, currentIndex: _currentIndex, onTap: () => _onTabTapped(2))),
+                Expanded(child: _NavItem(icon: Icons.campaign_outlined,     activeIcon: Icons.campaign,        label: 'News',     index: 3, currentIndex: _currentIndex, onTap: () => _onTabTapped(3))),
+                Expanded(child: _NavItem(icon: Icons.person_outline,        activeIcon: Icons.person,          label: 'Profile',  index: 4, currentIndex: _currentIndex, onTap: () => _onTabTapped(4))),
               ],
             ),
           ),
         ),
-      ),
       ),
     );
   }

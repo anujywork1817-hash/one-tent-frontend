@@ -5,20 +5,16 @@ import 'package:provider/provider.dart';
 
 import '../../data/models/models.dart';
 import '../../providers/providers.dart';
-import '../../widgets/handcrafted.dart';
 
-// ─── One Tent Design Tokens ───────────────────────────────────────────────
-const Color _kBgDeep = Color(0xFF0D0401); // near-black maroon (hero/appbar bg)
-const Color _kMaroon = Color(0xFF4A1000); // deep maroon
-const Color _kSurface = Color(0xFF1C0906); // card surface (dark)
-const Color _kBorder = Color(0xFF3D1A0D); // subtle border
-const Color _kGold = Color(0xFFD4891A); // primary accent
-const Color _kGoldLight = Color(0xFFE8A93A); // lighter gold
-const Color _kCream = Color(0xFFF5E6C8); // primary text on dark
-const Color _kBodyBg = Color(0xFFF2EAE0); // light cream body background
-const Color _kCardBg = Color(0xFFFFFFFF); // white cards on cream
-const Color _kTextDark = Color(0xFF2C1A0E); // dark brown text on light bg
-const Color _kTextMuted = Color(0xFF8A6A50); // muted brown
+// ─── One Tent Design Tokens — same brand palette as every other screen ────
+const Color _kMaroon = Color(0xFF4A1000);
+const Color _kGold = Color(0xFFD4891A);
+const Color _kBorder = Color(0xFFDDD0C4);
+const Color _kBodyBg = Color(0xFFFFFFFF);
+const Color _kCardBg = Color(0xFFFFFFFF);
+const Color _kTextDark = Color(0xFF2D0F05);
+const Color _kTextMuted = Color(0xFF7A4A30);
+const Color _kTextLight = Color(0xFFA07050);
 const Color _kGreen = Color(0xFF2E7D32);
 const Color _kRed = Color(0xFFC0392B);
 // ─────────────────────────────────────────────────────────────────────────────
@@ -86,7 +82,7 @@ class _MyBookingsScreenState extends State<MyBookingsScreen>
   }
 }
 
-// ── Dark Maroon Hero Header ────────────────────────────────────────────────────
+// ── Header — same plain white chrome as every other screen ─────────────────
 class _BookingsHeader extends StatelessWidget {
   final TabController tabs;
   final List<TentBooking> active, pending, past;
@@ -102,12 +98,8 @@ class _BookingsHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: const BoxDecoration(
-        color: _kMaroon,
-        borderRadius: BorderRadius.vertical(bottom: Radius.circular(24)),
-        boxShadow: [
-          BoxShadow(
-              color: Color(0x33000000), blurRadius: 12, offset: Offset(0, 4)),
-        ],
+        color: _kCardBg,
+        border: Border(bottom: BorderSide(color: _kBorder)),
       ),
       child: SafeArea(
         bottom: false,
@@ -115,7 +107,7 @@ class _BookingsHeader extends StatelessWidget {
           children: [
             // App bar row
             Padding(
-              padding: const EdgeInsets.fromLTRB(8, 8, 16, 0),
+              padding: const EdgeInsets.fromLTRB(4, 8, 16, 0),
               child: Row(
                 children: [
                   // This screen doubles as the "Bookings" bottom-nav tab
@@ -126,44 +118,31 @@ class _BookingsHeader extends StatelessWidget {
                   // context.pop() here used to sit dead on the tab.
                   if (Navigator.canPop(context))
                     IconButton(
-                      icon: const Icon(Icons.arrow_back_ios_new,
-                          color: _kCream, size: 20),
+                      icon: const Icon(Icons.chevron_left,
+                          color: _kTextDark, size: 28),
                       onPressed: () => context.pop(),
                     )
                   else
-                    const SizedBox(width: 48),
+                    const SizedBox(width: 12),
                   const Expanded(
                     child: Text(
                       'My Bookings',
-                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _kCream,
-                        fontWeight: FontWeight.bold,
+                        color: _kTextDark,
+                        fontWeight: FontWeight.w700,
                         fontSize: 18,
-                        letterSpacing: 0.4,
                       ),
                     ),
-                  ),
-                  // Gold temple icon
-                  Container(
-                    width: 36,
-                    height: 36,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: _kGold, width: 1.5),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child:
-                        const Icon(Icons.temple_hindu, color: _kGold, size: 18),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 12),
-            // Custom tab bar on dark bg
+            const SizedBox(height: 8),
+            // Tab bar
             TabBar(
               controller: tabs,
               labelColor: _kGold,
-              unselectedLabelColor: _kCream.withValues(alpha: 0.55),
+              unselectedLabelColor: _kTextMuted,
               indicator: UnderlineTabIndicator(
                 borderSide: const BorderSide(color: _kGold, width: 2.5),
                 insets: const EdgeInsets.symmetric(horizontal: 16),
@@ -226,7 +205,6 @@ class _BookingList extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: _kGold.withValues(alpha: 0.1),
                   shape: BoxShape.circle,
-                  border: Border.all(color: _kGold.withValues(alpha: 0.3)),
                 ),
                 child:
                     const Icon(Icons.inbox_outlined, size: 38, color: _kGold),
@@ -293,167 +271,121 @@ class _BookingCard extends StatelessWidget {
       onTap: () =>
           context.push('/booking-detail/${booking.id}', extra: booking),
       child: Container(
-        margin: const EdgeInsets.only(bottom: 16, right: 2),
-        clipBehavior: Clip.antiAlias,
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: _kCardBg,
-          borderRadius: handDrawnRadius(base: 16, seed: index),
-          border: Border.all(color: _kGold.withValues(alpha: 0.18)),
-          boxShadow: stickerShadow(_kMaroon.withValues(alpha: 0.1)),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+                color: _kMaroon.withValues(alpha: 0.06),
+                blurRadius: 16,
+                offset: const Offset(0, 6)),
+          ],
         ),
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // ── Card header bar (maroon accent) ─────────────────────────────
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-              decoration: BoxDecoration(
-                color: _kMaroon.withValues(alpha: 0.06),
-                border: Border(
-                    bottom: BorderSide(color: _kGold.withValues(alpha: 0.12))),
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Booking ref
-                  Expanded(
-                    child: Row(children: [
-                      const Icon(Icons.confirmation_number_outlined,
-                          size: 14, color: _kGold),
-                      const SizedBox(width: 6),
-                      Flexible(
-                        child: Text(
-                          booking.bookingRefStr ?? booking.id,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13,
-                            color: _kTextDark,
-                            letterSpacing: 0.4,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ]),
-                  ),
-                  // Status badge
-                  Tilt(
-                    degrees: 2.5,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 10, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: statusBg,
-                        borderRadius: handDrawnRadius(base: 6, seed: index),
-                        border: Border.all(
-                            color: statusColor.withValues(alpha: 0.3)),
-                        boxShadow: stickerShadow(
-                            statusColor.withValues(alpha: 0.15),
-                            dx: 2,
-                            dy: 2),
-                      ),
-                      child: Text(
-                        booking.status.toUpperCase(),
-                        style: TextStyle(
-                            color: statusColor,
-                            fontSize: 10,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8),
-                      ),
+            // Booking ref + status
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Expanded(
+                  child: Text(
+                    booking.bookingRefStr ?? booking.id,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14.5,
+                      color: _kTextDark,
                     ),
+                    overflow: TextOverflow.ellipsis,
                   ),
-                ],
+                ),
+                const SizedBox(width: 8),
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    booking.status.toUpperCase(),
+                    style: TextStyle(
+                        color: statusColor,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 0.6),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+
+            // Date range
+            Row(children: [
+              const Icon(Icons.calendar_today_outlined,
+                  size: 14, color: _kTextLight),
+              const SizedBox(width: 8),
+              Text(
+                '${_fmtDate(booking.checkInDate)}  →  ${_fmtDate(booking.checkOutDate)}',
+                style: const TextStyle(color: _kTextDark, fontSize: 13),
               ),
+            ]),
+            const SizedBox(height: 6),
+
+            // Nights / guests + price
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  '${booking.nights} night${booking.nights == 1 ? '' : 's'} · ${booking.numGuests} guest${booking.numGuests == 1 ? '' : 's'}',
+                  style: const TextStyle(color: _kTextMuted, fontSize: 13),
+                ),
+                Text(
+                  '₹${booking.totalPrice.toStringAsFixed(0)}',
+                  style: const TextStyle(
+                    color: _kTextDark,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
+                ),
+              ],
             ),
 
-            // ── Card body ───────────────────────────────────────────────────
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Date range
-                  Row(children: [
-                    const Icon(Icons.calendar_today, size: 14, color: _kGold),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${_fmtDate(booking.checkInDate)}  →  ${_fmtDate(booking.checkOutDate)}',
-                      style: const TextStyle(color: _kTextDark, fontSize: 13),
+            // QR code button (confirmed only)
+            if (booking.status == 'confirmed') ...[
+              const SizedBox(height: 12),
+              const Divider(color: _kBorder, height: 1),
+              const SizedBox(height: 10),
+              Align(
+                alignment: Alignment.centerRight,
+                child: GestureDetector(
+                  onTap: () =>
+                      context.push('/booking-qr/${booking.id}', extra: booking),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: _kGold,
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ]),
-                  const SizedBox(height: 8),
-
-                  // Nights / guests + price
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Row(children: [
-                        const Icon(Icons.nights_stay, size: 14, color: _kGold),
-                        const SizedBox(width: 8),
-                        Text(
-                          '${booking.nights} night(s)  •  ${booking.numGuests} guest(s)',
-                          style:
-                              const TextStyle(color: _kTextMuted, fontSize: 13),
-                        ),
-                      ]),
-                      // Price in gold
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: _kGold.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(8),
-                          border:
-                              Border.all(color: _kGold.withValues(alpha: 0.35)),
-                        ),
-                        child: Text(
-                          '₹${booking.totalPrice.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            color: _kGold,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                        ),
-                      ),
-                    ],
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.qr_code, size: 15, color: Colors.white),
+                        SizedBox(width: 6),
+                        Text('View QR Code',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold)),
+                      ],
+                    ),
                   ),
-
-                  // QR code button (confirmed only)
-                  if (booking.status == 'confirmed') ...[
-                    const SizedBox(height: 12),
-                    const Divider(color: Color(0xFFEDE0D4), height: 1),
-                    const SizedBox(height: 10),
-                    Row(children: [
-                      const Spacer(),
-                      GestureDetector(
-                        onTap: () => context.push('/booking-qr/${booking.id}',
-                            extra: booking),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 14, vertical: 7),
-                          decoration: BoxDecoration(
-                            color: _kMaroon,
-                            borderRadius: BorderRadius.circular(8),
-                            border: Border.all(
-                                color: _kGold.withValues(alpha: 0.5)),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.qr_code, size: 15, color: _kGold),
-                              SizedBox(width: 6),
-                              Text('View QR Code',
-                                  style: TextStyle(
-                                      color: _kGold,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold)),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ]),
-                  ],
-                ],
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
@@ -478,7 +410,6 @@ class _ErrorState extends StatelessWidget {
             decoration: BoxDecoration(
               color: _kRed.withValues(alpha: 0.1),
               shape: BoxShape.circle,
-              border: Border.all(color: _kRed.withValues(alpha: 0.3)),
             ),
             child: const Icon(Icons.error_outline, size: 36, color: _kRed),
           ),
@@ -494,13 +425,12 @@ class _ErrorState extends StatelessWidget {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
-                color: _kMaroon,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _kGold.withValues(alpha: 0.6)),
+                color: _kGold,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: const Text('Retry',
                   style: TextStyle(
-                      color: _kGold,
+                      color: Colors.white,
                       fontWeight: FontWeight.bold,
                       fontSize: 14)),
             ),

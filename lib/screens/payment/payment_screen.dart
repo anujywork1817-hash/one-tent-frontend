@@ -10,26 +10,16 @@ import '../../providers/providers.dart';
 
 // ─── One Tent Design Tokens ───────────────────────────────────────────────
 const _kHeroBg = Color(0xFF4A1000);
-const _kMaroonMid = Color(0xFF6B1A00);
-const _kBodyBg = Color(0xFFF2EAE0);
+const _kBodyBg = Color(0xFFFFFFFF);
 const _kCardBg = Color(0xFFFFFFFF);
 const _kGold = Color(0xFFD4891A);
-const _kGoldLight = Color(0xFFE8A93A);
 const _kBorderLight = Color(0xFFDDD0C4);
 const _kTextDark = Color(0xFF2D0F05);
 const _kTextMid = Color(0xFF7A4A30);
 const _kTextLight = Color(0xFFA07050);
-const _kCream = Color(0xFFF5E6C8);
 const _kSuccess = Color(0xFF2E7D32);
 const _kError = Color(0xFFC0392B);
 // ─────────────────────────────────────────────────────────────────────────────
-
-const _capsuleHighlights = [
-  {'icon': Icons.privacy_tip_rounded, 'label': 'Private & Peaceful'},
-  {'icon': Icons.health_and_safety_rounded, 'label': 'Secure & Hygienic'},
-  {'icon': Icons.solar_power_rounded, 'label': 'Solar Powered'},
-  {'icon': Icons.support_agent_rounded, 'label': 'On-call Assist'},
-];
 
 class PaymentScreen extends StatefulWidget {
   final TentBooking booking;
@@ -83,6 +73,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final currency = data['currency'] as String? ?? 'INR';
     final keyId = data['key_id'] as String? ?? '';
 
+    final visitor = context.read<AuthProvider>().visitor;
     final options = {
       'key': keyId,
       'amount': amount,
@@ -90,7 +81,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
       'order_id': orderId,
       'name': 'One Tent',
       'description': 'Booking Ref: ${widget.booking.bookingRef}',
-      'prefill': {'contact': '', 'email': ''},
+      'prefill': {
+        'contact': visitor?.phone ?? '',
+        'email': visitor?.email ?? '',
+      },
       'theme': {'color': '#4A1000'},
       'external': {
         'wallets': ['paytm', 'phonepe', 'googlepay']
@@ -140,7 +134,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final tentProv = context.read<TentProvider>();
     final booking = widget.booking;
     unawaited(tentProv.cancelBooking(booking.id, reason: 'Left before paying'));
-    if (mounted) context.pop();
+    // Leaving an unpaid checkout drops the guest back to Home, in step with
+    // the app-wide back behaviour, rather than to the now-stale booking form.
+    if (mounted) context.go('/home');
   }
 
   void _onWallet(ExternalWalletResponse response) {
@@ -175,24 +171,15 @@ class _PaymentScreenState extends State<PaymentScreen> {
               child: const Icon(Icons.check_circle, color: _kSuccess, size: 40),
             ),
             const SizedBox(height: 16),
-            const Text('Payment Successful!',
+            const Text('Payment Successful',
                 style: TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 20,
                     color: _kTextDark)),
-            const SizedBox(height: 4),
-            const Text(
-              'Stay. Inspire. Remember.',
-              style: TextStyle(
-                  color: _kGold,
-                  fontSize: 13,
-                  fontStyle: FontStyle.italic,
-                  fontWeight: FontWeight.w500),
-            ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Text('Ref: ${widget.booking.bookingRef}',
                 style: const TextStyle(color: _kTextMid, fontSize: 13)),
-            const SizedBox(height: 4),
+            const SizedBox(height: 10),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
               decoration: BoxDecoration(
@@ -210,20 +197,6 @@ class _PaymentScreenState extends State<PaymentScreen> {
             const SizedBox(height: 6),
             Text('Payment ID: $paymentId',
                 style: const TextStyle(fontSize: 11, color: _kTextLight)),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: _kGold.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: _kGold.withValues(alpha: 0.20)),
-              ),
-              child: const Text(
-                'One Tent is more than a stay — it\'s part of your journey.',
-                textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 11, color: _kTextMid, height: 1.4),
-              ),
-            ),
           ],
         ),
         actions: [
@@ -251,39 +224,23 @@ class _PaymentScreenState extends State<PaymentScreen> {
       child: Scaffold(
         backgroundColor: _kBodyBg,
 
-        // ── Hero App Bar ────────────────────────────────────────────────
+        // ── App bar — same plain white chrome as every other screen ──────
         appBar: AppBar(
-          backgroundColor: _kHeroBg,
+          backgroundColor: _kCardBg,
+          surfaceTintColor: _kCardBg,
           elevation: 0,
-          leading: Container(
-            margin: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: _kGold.withValues(alpha: 0.40)),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back, color: _kCream, size: 20),
-              onPressed: _cancelAndLeave,
-            ),
+          scrolledUnderElevation: 0,
+          leading: IconButton(
+            icon: const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
+            onPressed: _cancelAndLeave,
           ),
-          title: Row(children: [
-            Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: _kGold.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(8),
-                border: Border.all(color: _kGold.withValues(alpha: 0.45)),
-              ),
-              child: const Icon(Icons.payment, color: _kGold, size: 16),
-            ),
-            const SizedBox(width: 10),
-            const Text('Payment',
-                style: TextStyle(
-                    color: _kCream, fontSize: 17, fontWeight: FontWeight.w600)),
-          ]),
-          shape: const RoundedRectangleBorder(
-            borderRadius: BorderRadius.vertical(bottom: Radius.circular(20)),
+          title: const Text('Payment',
+              style: TextStyle(
+                  color: _kTextDark, fontSize: 17, fontWeight: FontWeight.w700)),
+          centerTitle: false,
+          bottom: PreferredSize(
+            preferredSize: const Size.fromHeight(1),
+            child: Container(height: 1, color: _kBorderLight),
           ),
         ),
 
@@ -294,170 +251,124 @@ class _PaymentScreenState extends State<PaymentScreen> {
             children: [
               const SizedBox(height: 4),
 
-              // ── Booking summary card ──────────────────────────────────
+              // ── Booking summary ────────────────────────────────────────
+              // Plain text, no boxed card — this is the same "screen title"
+              // weight everywhere else in the app, not a separate widget
+              // fighting the price card below it for attention.
+              Text(booking.bookingRef,
+                  style: const TextStyle(
+                      color: _kTextDark,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800)),
+              const SizedBox(height: 4),
+              Text('${booking.duration} night${booking.duration == 1 ? '' : 's'} · ${booking.numGuests} guest${booking.numGuests == 1 ? '' : 's'}',
+                  style: const TextStyle(color: _kTextMid, fontSize: 13.5)),
+              const SizedBox(height: 24),
+
+              // ── Price breakdown ────────────────────────────────────────
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_kHeroBg, _kMaroonMid],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
+                  color: _kCardBg,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: _kGold.withValues(alpha: 0.30)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      const Icon(Icons.receipt_long, color: _kGold, size: 16),
-                      const SizedBox(width: 8),
-                      Text('Booking Summary',
-                          style: TextStyle(
-                              color: _kCream.withValues(alpha: 0.70),
-                              fontSize: 12)),
-                    ]),
-                    const SizedBox(height: 8),
-                    Text('Ref: ${booking.bookingRef}',
-                        style: const TextStyle(
-                            color: _kCream,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold)),
-                    const SizedBox(height: 4),
-                    Text(
-                        '${booking.duration} day(s)  •  ${booking.numGuests} guest(s)',
-                        style: TextStyle(
-                            color: _kCream.withValues(alpha: 0.70),
-                            fontSize: 13)),
+                  boxShadow: [
+                    BoxShadow(
+                        color: _kHeroBg.withValues(alpha: 0.07),
+                        blurRadius: 20,
+                        offset: const Offset(0, 6)),
                   ],
                 ),
-              ),
-              const SizedBox(height: 20),
-
-              // ── Capsule highlights ────────────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: _kGold.withValues(alpha: 0.07),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _kGold.withValues(alpha: 0.20)),
-                ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('What\'s waiting for you',
+                    const Text('Price Breakdown',
                         style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                             color: _kTextDark)),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 12),
+                    // Real headcount for this booking — the same guest and
+                    // children counts the child charge below is based on.
+                    _breakdownRow(
+                      'Guests',
+                      null,
+                      valueText: '${booking.numGuests} adult${booking.numGuests == 1 ? '' : 's'}'
+                          '${(booking.childrenUnder5 + booking.childrenAbove5) > 0 ? ' + ${booking.childrenUnder5 + booking.childrenAbove5} child${(booking.childrenUnder5 + booking.childrenAbove5) == 1 ? '' : 'ren'}' : ''}',
+                    ),
+                    // Per-tax figures only add up cleanly for a single-tent
+                    // booking — a multi-room checkout's group total is the
+                    // real sum across all rooms, so it gets a plain total
+                    // instead of a breakdown that wouldn't actually match.
+                    if (booking.roomCount > 1) ...[
+                      _breakdownRow(
+                          'Combined charge · ${booking.roomCount} tents',
+                          booking.amountDue),
+                    ] else ...[
+                      _breakdownRow('Room charge', booking.baseAmount),
+                      if (booking.discountAmount > 0)
+                        _breakdownRow(
+                          booking.couponCode != null
+                              ? 'Coupon (${booking.couponCode})'
+                              : 'Discount',
+                          -booking.discountAmount,
+                          valueColor: _kSuccess,
+                        ),
+                      _breakdownRow(
+                          'CGST (${(booking.gstRate / 2).toStringAsFixed(0)}%)',
+                          booking.cgstAmount),
+                      _breakdownRow(
+                          'SGST (${(booking.gstRate / 2).toStringAsFixed(0)}%)',
+                          booking.sgstAmount),
+                      if (booking.childFee > 0)
+                        _breakdownRow(
+                            'Child charge (${booking.childrenAbove5} above 5 yrs)',
+                            booking.childFee),
+                    ],
+                    const Divider(height: 22, color: _kBorderLight),
                     Row(
-                      children: _capsuleHighlights
-                          .map((h) => Expanded(
-                                child: Column(children: [
-                                  Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: _kGold.withValues(alpha: 0.14),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Icon(h['icon'] as IconData,
-                                        size: 16, color: _kGold),
-                                  ),
-                                  const SizedBox(height: 5),
-                                  Text(h['label'] as String,
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(
-                                          fontSize: 9,
-                                          color: _kTextMid,
-                                          fontWeight: FontWeight.w500),
-                                      maxLines: 2),
-                                ]),
-                              ))
-                          .toList(),
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text('Total payable',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold, fontSize: 15)),
+                        Text('₹${booking.amountDue.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                fontSize: 20,
+                                color: _kGold)),
+                      ],
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
-
-              // ── Total amount ──────────────────────────────────────────
-              Center(
-                child: Column(children: [
-                  Text(
-                      booking.roomCount > 1
-                          ? 'Total Amount · ${booking.roomCount} Rooms'
-                          : 'Total Amount',
-                      style: const TextStyle(color: _kTextMid, fontSize: 14)),
-                  const SizedBox(height: 8),
-                  Text('₹${booking.amountDue.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                          fontSize: 48,
-                          fontWeight: FontWeight.bold,
-                          color: _kGold)),
-                ]),
-              ),
               const SizedBox(height: 28),
 
-              // ── Payment methods card ──────────────────────────────────
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: _kCardBg,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: _kBorderLight),
-                  boxShadow: [
-                    BoxShadow(
-                        color: _kHeroBg.withValues(alpha: 0.06),
-                        blurRadius: 8,
-                        offset: const Offset(0, 3)),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(children: [
-                      Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: _kGold.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child:
-                            const Icon(Icons.payment, color: _kGold, size: 16),
-                      ),
-                      const SizedBox(width: 10),
-                      const Text('Pay via',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: _kTextDark)),
-                    ]),
-                    const SizedBox(height: 14),
-                    const _PayMethod(
-                        icon: Icons.credit_card, label: 'Credit / Debit Card'),
-                    const SizedBox(height: 10),
-                    const _PayMethod(
-                        icon: Icons.account_balance_wallet,
-                        label: 'UPI (GPay, PhonePe, Paytm)'),
-                    const SizedBox(height: 10),
-                    const _PayMethod(
-                        icon: Icons.account_balance, label: 'Net Banking'),
-                  ],
-                ),
-              ),
+              // ── Payment methods ────────────────────────────────────────
+              const Text('Pay via',
+                  style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12.5,
+                      color: _kTextMid,
+                      letterSpacing: 0.3)),
+              const SizedBox(height: 12),
+              const _PayMethod(
+                  icon: Icons.credit_card_outlined,
+                  label: 'Credit / Debit Card'),
+              const _PayMethod(
+                  icon: Icons.account_balance_wallet_outlined,
+                  label: 'UPI (GPay, PhonePe, Paytm)'),
+              const _PayMethod(
+                  icon: Icons.account_balance_outlined, label: 'Net Banking'),
 
               // ── Error ─────────────────────────────────────────────────
               if (_error != null) ...[
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: _kError.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: _kError.withValues(alpha: 0.30)),
+                    color: _kError.withValues(alpha: 0.06),
+                    borderRadius: BorderRadius.circular(10),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -466,26 +377,27 @@ class _PaymentScreenState extends State<PaymentScreen> {
                       const SizedBox(width: 8),
                       Expanded(
                           child: Text(_error!,
-                              style: const TextStyle(color: _kError))),
+                              style: const TextStyle(
+                                  color: _kError, fontSize: 13))),
                     ],
                   ),
                 ),
               ],
-              const SizedBox(height: 28),
+              const SizedBox(height: 32),
 
               // ── Pay button ────────────────────────────────────────────
               SizedBox(
                 width: double.infinity,
-                height: 52,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: _isLoading ? null : _startPayment,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: _kHeroBg,
-                    disabledBackgroundColor: _kHeroBg.withValues(alpha: 0.5),
+                    backgroundColor: _kGold,
+                    disabledBackgroundColor: _kGold.withValues(alpha: 0.4),
+                    foregroundColor: Colors.white,
                     elevation: 0,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(26),
-                      side: BorderSide(color: _kGold.withValues(alpha: 0.55)),
+                      borderRadius: BorderRadius.circular(16),
                     ),
                   ),
                   child: _isLoading
@@ -493,44 +405,60 @@ class _PaymentScreenState extends State<PaymentScreen> {
                           width: 22,
                           height: 22,
                           child: CircularProgressIndicator(
-                              color: _kGold, strokeWidth: 2))
+                              color: Colors.white, strokeWidth: 2))
                       : Text(
                           'Pay ₹${booking.amountDue.toStringAsFixed(0)}',
                           style: const TextStyle(
-                              color: _kCream,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              letterSpacing: 0.4),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.2),
                         ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 14),
 
-              // ── Secure + eco note ─────────────────────────────────────
+              // ── Secure note ────────────────────────────────────────────
               Center(
-                child: Column(children: [
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    Icon(Icons.lock, size: 14, color: _kTextLight),
-                    const SizedBox(width: 4),
-                    Text('Secured by Razorpay',
-                        style: TextStyle(color: _kTextLight, fontSize: 12)),
-                  ]),
-                  const SizedBox(height: 6),
-                  Row(mainAxisSize: MainAxisSize.min, children: [
-                    const Icon(Icons.eco_rounded, size: 13, color: _kSuccess),
-                    const SizedBox(width: 4),
-                    Text('Your stay is solar powered & eco-friendly',
-                        style: TextStyle(
-                            color: _kTextLight,
-                            fontSize: 11,
-                            fontStyle: FontStyle.italic)),
-                  ]),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(Icons.lock_outline, size: 13, color: _kTextLight),
+                  const SizedBox(width: 4),
+                  Text('Secured by Razorpay',
+                      style: TextStyle(color: _kTextLight, fontSize: 12)),
                 ]),
               ),
               const SizedBox(height: 20),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// [value] renders as a ₹ amount; pass null with [valueText] instead for
+  /// a non-money row like a headcount.
+  Widget _breakdownRow(String label, double? value,
+      {Color? valueColor, String? valueText}) {
+    final display = valueText ??
+        () {
+          final v = value ?? 0;
+          final isNegative = v < 0;
+          return '${isNegative ? '-' : ''}₹${v.abs().toStringAsFixed(0)}';
+        }();
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Expanded(
+            child: Text(label,
+                style: const TextStyle(color: _kTextMid, fontSize: 12.5)),
+          ),
+          Text(display,
+              style: TextStyle(
+                  color: valueColor ?? _kTextDark,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700)),
+        ],
       ),
     );
   }
@@ -543,18 +471,13 @@ class _PayMethod extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(children: [
-      Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          color: _kGold.withValues(alpha: 0.10),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Icon(icon, color: _kGold, size: 16),
-      ),
-      const SizedBox(width: 12),
-      Text(label, style: const TextStyle(color: _kTextMid, fontSize: 13)),
-    ]);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Row(children: [
+        Icon(icon, color: _kTextMid, size: 18),
+        const SizedBox(width: 12),
+        Text(label, style: const TextStyle(color: _kTextDark, fontSize: 13.5)),
+      ]),
+    );
   }
 }
