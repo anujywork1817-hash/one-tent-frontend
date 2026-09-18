@@ -61,9 +61,11 @@ class _MainScaffoldState extends State<MainScaffold> {
   @override
   void didUpdateWidget(covariant MainScaffold oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // All five bottom-nav routes share one page key, so switching tabs
-    // rebuilds this same widget with a new initialIndex instead of pushing
-    // a route. Keep the shown tab in step with it.
+    // Each bottom-nav route is its own distinct page now, so switching tabs
+    // normally creates a fresh MainScaffold State (initState already seeds
+    // _currentIndex correctly) rather than updating this one — this is just
+    // a defensive no-op guard for the rare case Flutter does reuse the
+    // Element with a new initialIndex.
     if (widget.initialIndex != oldWidget.initialIndex) {
       _currentIndex = widget.initialIndex;
     }
@@ -76,9 +78,9 @@ class _MainScaffoldState extends State<MainScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    // Back handling for the whole app lives in AppBackScope (which wraps this
-    // shell too): a non-Home tab's back goes to '/home'; '/home' back runs
-    // the tap-again-to-exit gate.
+    // Back handling for the shell (a non-Home tab → Home tab; Home tab →
+    // press-back-again-to-exit) lives entirely in AppBackScope, which the
+    // router wraps around this widget. Nothing to do here.
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,

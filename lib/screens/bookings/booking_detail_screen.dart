@@ -143,22 +143,29 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     const SizedBox(height: 8),
                     _InfoCard(
                       seed: 1,
-                      child: Row(children: [
-                        const Icon(Icons.confirmation_number_outlined,
-                            color: _kGold, size: 18),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            booking.bookingRefStr ?? booking.id,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 14,
-                              color: _kTextDark,
-                              letterSpacing: 0.4,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(children: [
+                            const Icon(Icons.confirmation_number_outlined,
+                                color: _kGold, size: 18),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                booking.bookingRefStr ?? booking.id,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: _kTextDark,
+                                  letterSpacing: 0.4,
+                                ),
+                              ),
                             ),
-                          ),
-                        ),
-                      ]),
+                          ]),
+                          const Divider(color: _kDivider, height: 20),
+                          _detailRow('Booked On', _bookedOnIst(booking.bookedAt)),
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 16),
 
@@ -448,6 +455,19 @@ Widget _detailRow(String label, String value, {bool bold = false}) => Row(
         ),
       ],
     );
+
+/// The backend stores `created_at` as a UTC timestamp — `DateTime.parse` on
+/// a value like "...Z" already returns it as UTC (isUtc: true), but this
+/// converts explicitly rather than relying on that so a booking's "Booked
+/// On" time reads correctly in IST (UTC+5:30) even on a device set to a
+/// different timezone, instead of silently showing local device time.
+String _bookedOnIst(DateTime dt) {
+  final utc = dt.isUtc ? dt : dt.toUtc();
+  final ist = utc.add(const Duration(hours: 5, minutes: 30));
+  final datePart = DateFormat('d MMM yyyy').format(ist);
+  final timePart = DateFormat('h:mm a').format(ist);
+  return '$datePart, $timePart IST';
+}
 
 // ── Header — same plain white chrome as every other screen ─────────────────
 class _DetailHeader extends StatelessWidget {

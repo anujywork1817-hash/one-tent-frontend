@@ -34,6 +34,7 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
   final _codeCtrl = TextEditingController();
   bool _verifying = false;
   bool _resending = false;
+  bool _changingEmail = false;
   String? _error;
   int _cooldown = 0;
   Timer? _timer;
@@ -116,6 +117,46 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
     }
   }
 
+  /// Lets a guest who mistyped their address at signup fix it right here,
+  /// instead of being stuck staring at a code that will never arrive — the
+  /// backend rejects the change once the account is verified, so this is
+  /// only ever offered while it's still relevant.
+  Future<void> _openChangeEmail() async {
+    final auth = context.read<AuthProvider>();
+    final ctrl = TextEditingController(text: auth.visitor?.email ?? '');
+    final newEmail = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) => _ChangeEmailSheet(controller: ctrl),
+    );
+    ctrl.dispose();
+    if (newEmail == null || newEmail.isEmpty || !mounted) return;
+
+    setState(() {
+      _changingEmail = true;
+      _error = null;
+    });
+    final ok = await auth.updateEmail(newEmail);
+    if (!mounted) return;
+    setState(() => _changingEmail = false);
+
+    if (ok) {
+      _codeCtrl.clear();
+      _timer?.cancel();
+      setState(() => _cooldown = 0);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Email updated. A new code was sent to $newEmail'),
+          backgroundColor: _kGreen,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } else {
+      setState(() => _error = auth.error ?? 'Could not update your email');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final email = context.watch<AuthProvider>().visitor?.email ?? '';
@@ -164,6 +205,26 @@ class _VerifyEmailScreenState extends State<VerifyEmailScreen> {
                         const TextSpan(
                             text: '. Enter it below to unlock booking.'),
                       ],
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  GestureDetector(
+                    onTap: _changingEmail ? null : _openChangeEmail,
+                    child: Text.rich(
+                      TextSpan(
+                        style: const TextStyle(fontSize: 13, height: 1.4),
+                        children: [
+                          const TextSpan(
+                              text: 'Typed the wrong email? ',
+                              style: TextStyle(color: _kTextMuted)),
+                          TextSpan(
+                            text: 'Change it',
+                            style: TextStyle(
+                                color: _changingEmail ? _kTextMuted : _kGold,
+                                fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 28),
@@ -342,6 +403,111 @@ class _KumbhButton extends StatelessWidget {
                   letterSpacing: 0.3,
                 ),
               ),
+      ),
+    );
+  }
+}
+
+// ── Change-email bottom sheet ────────────────────────────────────────────
+class _ChangeEmailSheet extends StatefulWidget {
+  const _ChangeEmailSheet({required this.controller});
+  final TextEditingController controller;
+
+  @override
+  State<_ChangeEmailSheet> createState() => _ChangeEmailSheetState();
+}
+
+class _ChangeEmailSheetState extends State<_ChangeEmailSheet> {
+  String? _error;
+
+  bool get _isValidEmail {
+    final v = widget.controller.text.trim();
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(v);
+  }
+
+  void _submit() {
+    final value = widget.controller.text.trim().toLowerCase();
+    if (!_isValidEmail) {
+      setState(() => _error = 'Enter a valid email address');
+      return;
+    }
+    Navigator.of(context).pop(value);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        decoration: const BoxDecoration(
+          color: _kCardBg,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        padding: const EdgeInsets.fromLTRB(24, 14, 24, 28),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: _kDivider,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Change your email',
+              style: TextStyle(
+                  fontSize: 19, fontWeight: FontWeight.bold, color: _kTextDark),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              "We'll send a new verification code to the corrected address.",
+              style: TextStyle(fontSize: 13, color: _kTextMuted, height: 1.4),
+            ),
+            const SizedBox(height: 20),
+            Container(
+              decoration: BoxDecoration(
+                color: _kFieldFill,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: TextField(
+                controller: widget.controller,
+                autofocus: true,
+                keyboardType: TextInputType.emailAddress,
+                style: const TextStyle(color: _kTextDark, fontSize: 15),
+                onChanged: (_) {
+                  if (_error != null) setState(() => _error = null);
+                },
+                onSubmitted: (_) => _submit(),
+                decoration: const InputDecoration(
+                  filled: false,
+                  hintText: 'you@example.com',
+                  hintStyle: TextStyle(color: _kDivider),
+                  border: InputBorder.none,
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                ),
+              ),
+            ),
+            if (_error != null) ...[
+              const SizedBox(height: 8),
+              Text(_error!, style: const TextStyle(color: _kRed, fontSize: 12.5)),
+            ],
+            const SizedBox(height: 20),
+            _KumbhButton(
+              label: 'Update Email',
+              isLoading: false,
+              onTap: _submit,
+            ),
+          ],
+        ),
       ),
     );
   }

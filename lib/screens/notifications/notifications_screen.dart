@@ -60,6 +60,23 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     } catch (_) {}
   }
 
+  /// Tapping a notification is what should clear its own unread dot — the
+  /// list updates immediately (optimistic) so it doesn't wait on the
+  /// network; if the request fails, the read state is rolled back.
+  Future<void> _markOneRead(AppNotification n) async {
+    if (n.isRead) return;
+    final i = _notifications.indexWhere((x) => x.id == n.id);
+    if (i == -1) return;
+
+    setState(() => _notifications[i] = _notifications[i].copyWith(isRead: true));
+    try {
+      await context.read<AuthProvider>().markNotificationRead(n.id);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _notifications[i] = _notifications[i].copyWith(isRead: false));
+    }
+  }
+
   IconData _iconFor(String type) {
     switch (type) {
       case 'booking_confirmed': return Icons.check_circle_outline_rounded;
@@ -153,6 +170,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                   color: _colorFor(_notifications[i].type),
                                   timeAgo:
                                       _timeAgo(_notifications[i].createdAt),
+                                  onTap: () => _markOneRead(_notifications[i]),
                                 ),
                               ),
                   ),
@@ -246,20 +264,27 @@ class _NotifCard extends StatelessWidget {
   final IconData icon;
   final Color color;
   final String timeAgo;
+  final VoidCallback onTap;
 
   const _NotifCard({
     required this.notification,
     required this.icon,
     required this.color,
     required this.timeAgo,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final n = notification;
-    return Container(
+    return Material(
+      color: n.isRead ? _kCardBg : _kCardUnread,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
       decoration: BoxDecoration(
-        color: n.isRead ? _kCardBg : _kCardUnread,
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
@@ -369,6 +394,8 @@ class _NotifCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+      ),
       ),
     );
   }

@@ -34,6 +34,10 @@ class TentDetailScreen extends StatefulWidget {
 class _TentDetailScreenState extends State<TentDetailScreen> {
   TentReviewSummary _reviews = const TentReviewSummary();
   bool _reviewsLoading = true;
+  // Null until it's loaded — and stays null for a guest who's never
+  // actually stayed at this tent, in which case no "Write a review" button
+  // is offered at all (see _ReviewsSection).
+  ReviewableBooking? _reviewable;
   final _photoController = PageController();
   int _photoIndex = 0;
 
@@ -69,7 +73,10 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadReviews());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadReviews();
+      _loadReviewable();
+    });
   }
 
   Future<void> _loadReviews() async {
@@ -78,6 +85,22 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
     setState(() {
       _reviews = summary;
       _reviewsLoading = false;
+    });
+  }
+
+  Future<void> _loadReviewable() async {
+    if (!context.read<AuthProvider>().isAuthenticated) return;
+    final r = await context.read<TentProvider>().myReviewableBooking(tent.id);
+    if (!mounted) return;
+    setState(() => _reviewable = r);
+  }
+
+  void _openReview() {
+    final r = _reviewable;
+    if (r == null) return;
+    context.push('/review', extra: {
+      'bookingId': r.bookingId,
+      'tentName': tent.name,
     });
   }
 
@@ -165,7 +188,7 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
                 ),
                 // VIP badge, bottom-left — real signal: only shown for
                 // tents actually typed "luxury".
-                if (tent.tentType.toLowerCase() == 'luxury')
+                if (tent.tentType.toLowerCase() == 'deluxe')
                   Positioned(
                     bottom: 12,
                     left: 12,
@@ -375,7 +398,7 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
                       _policyRow(Icons.logout_rounded, 'Check-out: 11:00 AM'),
                       Divider(height: 1, color: _kBorderLight),
                       _policyRow(Icons.cancel_outlined,
-                          'Free cancellation before check-in'),
+                          'Free cancellation before 48 hrs'),
                       Divider(height: 1, color: _kBorderLight),
                       _policyRow(Icons.no_food_outlined,
                           'No outside food allowed'),
@@ -384,7 +407,12 @@ class _TentDetailScreenState extends State<TentDetailScreen> {
                   const SizedBox(height: 24),
 
                   // ── Reviews ────────────────────────────────────────────
-                  _ReviewsSection(loading: _reviewsLoading, summary: _reviews),
+                  _ReviewsSection(
+                    loading: _reviewsLoading,
+                    summary: _reviews,
+                    reviewable: _reviewable,
+                    onReview: _openReview,
+                  ),
                   const SizedBox(height: 28),
 
                   if (!tent.isAvailable)
@@ -774,7 +802,16 @@ class _BottomBookBar extends StatelessWidget {
 class _ReviewsSection extends StatelessWidget {
   final bool loading;
   final TentReviewSummary summary;
-  const _ReviewsSection({required this.loading, required this.summary});
+  // Null while it's still loading, or for a guest with no qualifying stay —
+  // either way, no review button is shown.
+  final ReviewableBooking? reviewable;
+  final VoidCallback onReview;
+  const _ReviewsSection({
+    required this.loading,
+    required this.summary,
+    this.reviewable,
+    required this.onReview,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -810,6 +847,38 @@ class _ReviewsSection extends StatelessWidget {
                   color: _kTextMid, fontWeight: FontWeight.w600, fontSize: 13),
             ),
           ],
+          const Spacer(),
+          // Only offered to a guest who actually has a confirmed/completed
+          // booking here — reviews are tied to a real stay, not open to
+          // anyone browsing.
+          if (reviewable != null)
+            GestureDetector(
+              onTap: onReview,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+                decoration: BoxDecoration(
+                  color: _kGold.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Icon(
+                      reviewable!.alreadyReviewed
+                          ? Icons.edit_outlined
+                          : Icons.rate_review_outlined,
+                      size: 14,
+                      color: _kGold),
+                  const SizedBox(width: 5),
+                  Text(
+                    reviewable!.alreadyReviewed
+                        ? 'Edit your review'
+                        : 'Write a review',
+                    style: const TextStyle(
+                        color: _kGold, fontWeight: FontWeight.w700, fontSize: 12),
+                  ),
+                ]),
+              ),
+            ),
         ]),
         const SizedBox(height: 12),
         if (summary.reviews.isEmpty)

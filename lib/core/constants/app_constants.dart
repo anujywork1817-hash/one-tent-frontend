@@ -62,8 +62,10 @@ class AppConstants {
     {'label': '30 Days', 'value': '30'},
   ];
 
-  // Tent types — must match backend exactly
-  static const List<String> tentTypes = ['single', 'double', 'luxury'];
+  // Tent categories — must match backend exactly. Not a bed count (that's a
+  // separate choice the guest makes at booking time) — these are the tent
+  // tiers themselves.
+  static const List<String> tentTypes = ['regular', 'premium', 'deluxe'];
 
   // Booking statuses
   static const Map<String, String> bookingStatusLabels = {

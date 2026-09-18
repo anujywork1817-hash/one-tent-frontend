@@ -28,15 +28,6 @@ import '../screens/about/kumbh_history_screen.dart';
 import '../screens/events/kumbh_calendar_screen.dart';
 import '../screens/offers/offers_screen.dart';
 
-/// The one page key shared by all five bottom-nav destinations. Because the
-/// key is identical, GoRouter treats `/home`, `/search`, `/my-bookings`,
-/// `/news` and `/profile` as the *same* page — switching between them just
-/// rebuilds [MainScaffold] with a new `initialIndex` (an instant tab swap,
-/// no transition, all tab states kept alive) instead of pushing a new route.
-/// It also means a `go('/home')` from anywhere lands on this same shell and
-/// resets it to the Home tab.
-const ValueKey<String> _shellPageKey = ValueKey('app-shell');
-
 /// A subtle fade + rise used for every pushed screen, so navigation feels
 /// like one connected motion instead of a hard cut. 220ms is fast enough to
 /// never feel like it's in the way.
@@ -44,9 +35,19 @@ const ValueKey<String> _shellPageKey = ValueKey('app-shell');
 /// Every screen is wrapped in [AppBackScope] so the Android system back
 /// button / edge-swipe always routes to Home first (and, on Home, through
 /// the tap-again-to-exit gate) rather than closing the app.
-CustomTransitionPage<void> _page(Widget child, {LocalKey? pageKey}) =>
+///
+/// NOTE: the five bottom-nav routes used to share one hardcoded page key so
+/// switching tabs felt instant instead of pushing a new route. That turned
+/// out to be the root cause of three separate bugs (GoRouterState reporting
+/// the wrong path, "back does nothing" on a tab, and finally the system
+/// back button bypassing PopScope entirely and closing the app) — sharing
+/// one page identity across five different locations put GoRouter into a
+/// configuration it isn't designed for. Each route now gets its own real,
+/// distinct page again; tab switches show the normal transition instead of
+/// being instant, which is a small price for back navigation actually
+/// working.
+CustomTransitionPage<void> _page(Widget child) =>
     CustomTransitionPage(
-      key: pageKey,
       child: AppBackScope(child: child),
       transitionDuration: const Duration(milliseconds: 220),
       reverseTransitionDuration: const Duration(milliseconds: 180),
@@ -115,23 +116,16 @@ class AppRouter {
           builder: (_, __) => const AppBackScope(child: VerifyEmailScreen())),
 
       // ── Main shell with bottom nav ──────────────────────
-      // All five share _shellPageKey, so switching tabs (and any go('/home'))
-      // just re-parameterises this one page instead of stacking routes.
       GoRoute(path: '/home',
-          pageBuilder: (_, __) => _page(
-              const MainScaffold(initialIndex: 0), pageKey: _shellPageKey)),
+          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 0))),
       GoRoute(path: '/search',
-          pageBuilder: (_, __) => _page(
-              const MainScaffold(initialIndex: 1), pageKey: _shellPageKey)),
+          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 1))),
       GoRoute(path: '/my-bookings',
-          pageBuilder: (_, __) => _page(
-              const MainScaffold(initialIndex: 2), pageKey: _shellPageKey)),
+          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 2))),
       GoRoute(path: '/news',
-          pageBuilder: (_, __) => _page(
-              const MainScaffold(initialIndex: 3), pageKey: _shellPageKey)),
+          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 3))),
       GoRoute(path: '/profile',
-          pageBuilder: (_, __) => _page(
-              const MainScaffold(initialIndex: 4), pageKey: _shellPageKey)),
+          pageBuilder: (_, __) => _page(const MainScaffold(initialIndex: 4))),
 
       // ── Detail screens ──────────────────────────────────
       GoRoute(

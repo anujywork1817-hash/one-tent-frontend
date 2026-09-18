@@ -33,6 +33,10 @@ class _PaymentScreenState extends State<PaymentScreen> {
   late Razorpay _razorpay;
   bool _isLoading = false;
   String? _error;
+  // Flips true the moment payment is verified — once that's happened there
+  // is no pending booking left to release, so back must never again run
+  // _cancelAndLeave (which would cancel an already-paid booking).
+  bool _paid = false;
 
   @override
   void initState() {
@@ -109,6 +113,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
     setState(() => _isLoading = false);
 
     if (ok) {
+      _paid = true;
       _showSuccess(response.paymentId ?? '');
     } else {
       setState(() {
@@ -134,9 +139,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
     final tentProv = context.read<TentProvider>();
     final booking = widget.booking;
     unawaited(tentProv.cancelBooking(booking.id, reason: 'Left before paying'));
-    // Leaving an unpaid checkout drops the guest back to Home, in step with
-    // the app-wide back behaviour, rather than to the now-stale booking form.
-    if (mounted) context.go('/home');
+    // Pop one step, back to wherever checkout was started from — this screen
+    // just intercepts the back press so the pending booking gets released
+    // first, then defers to normal navigation.
+    if (mounted) {
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go('/home');
+      }
+    }
   }
 
   void _onWallet(ExternalWalletResponse response) {
@@ -152,7 +164,18 @@ class _PaymentScreenState extends State<PaymentScreen> {
     showDialog(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
+      // The system back button would otherwise just pop this dialog and
+      // reveal the payment screen underneath — which, before this fix,
+      // still thought there was an unpaid booking to cancel. Back here now
+      // does the same as if nothing were pending: go straight Home.
+      builder: (_) => PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          Navigator.of(context).pop();
+          context.go('/home');
+        },
+        child: AlertDialog(
         backgroundColor: _kCardBg,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         content: Column(
@@ -209,6 +232,7 @@ class _PaymentScreenState extends State<PaymentScreen> {
                 style: TextStyle(color: _kGold, fontWeight: FontWeight.w600)),
           ),
         ],
+        ),
       ),
     );
   }
@@ -219,7 +243,16 @@ class _PaymentScreenState extends State<PaymentScreen> {
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _cancelAndLeave();
+        if (didPop) return;
+        // Payment already went through (the success dialog's own PopScope
+        // normally handles back while it's open, but this is a safety net
+        // for any path that reveals this screen again afterwards) — there
+        // is nothing left to cancel, just leave.
+        if (_paid) {
+          context.go('/home');
+        } else {
+          _cancelAndLeave();
+        }
       },
       child: Scaffold(
         backgroundColor: _kBodyBg,

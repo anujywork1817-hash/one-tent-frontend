@@ -140,6 +140,10 @@ class _AiChatScreenState extends State<AiChatScreen> {
                       onSubmitted: (_) => _send(),
                       style: const TextStyle(color: _kTextDark, fontSize: 14),
                       decoration: InputDecoration(
+                        // The global theme's filled:true paints a near-black
+                        // fill by default — without this the typed text (dark
+                        // on dark) was effectively invisible.
+                        filled: false,
                         hintText: 'Ask a question…',
                         hintStyle: const TextStyle(
                             color: _kTextLight, fontSize: 14),

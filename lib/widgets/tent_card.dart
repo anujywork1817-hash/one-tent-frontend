@@ -60,7 +60,7 @@ class TentCard extends StatelessWidget {
 
     final wishlist = context.watch<WishlistProvider>();
     final isSaved = wishlist.isSaved(tent.id);
-    final isVip = tent.tentType.toLowerCase() == 'luxury';
+    final isVip = tent.tentType.toLowerCase() == 'deluxe';
 
     return GestureDetector(
       onTap: onTap,

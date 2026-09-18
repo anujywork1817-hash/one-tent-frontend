@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -27,19 +29,51 @@ class MyBookingsScreen extends StatefulWidget {
 }
 
 class _MyBookingsScreenState extends State<MyBookingsScreen>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late TabController _tabs;
+  Timer? _pollTimer;
+
+  // Polling interval for the quiet background refresh — short enough that a
+  // new booking (or a status change like a payment confirming, or a refund
+  // going through) shows up on its own without the guest having to know to
+  // pull down, but not so tight it hammers the API.
+  static const _pollInterval = Duration(seconds: 15);
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _tabs = TabController(length: 3, vsync: this);
     WidgetsBinding.instance.addPostFrameCallback(
         (_) => context.read<TentProvider>().loadMyBookings());
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _pollTimer?.cancel();
+    _pollTimer = Timer.periodic(_pollInterval, (_) {
+      if (!mounted) return;
+      context.read<TentProvider>().refreshMyBookingsQuietly();
+    });
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Pause polling while the app is backgrounded (nothing to show anyone,
+    // just wasted requests) and catch up with one immediate refresh plus a
+    // fresh timer the moment it's foregrounded again.
+    if (state == AppLifecycleState.resumed) {
+      context.read<TentProvider>().refreshMyBookingsQuietly();
+      _startPolling();
+    } else if (state == AppLifecycleState.paused) {
+      _pollTimer?.cancel();
+    }
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _pollTimer?.cancel();
     _tabs.dispose();
     super.dispose();
   }
@@ -133,6 +167,15 @@ class _BookingsHeader extends StatelessWidget {
                         fontSize: 18,
                       ),
                     ),
+                  ),
+                  // Instant on-demand refresh — the quiet poll already keeps
+                  // this list current on its own, but this is the "check
+                  // right now" button for right after paying.
+                  IconButton(
+                    icon: const Icon(Icons.refresh_rounded,
+                        color: _kTextDark, size: 22),
+                    onPressed: () =>
+                        context.read<TentProvider>().loadMyBookings(),
                   ),
                 ],
               ),

@@ -55,7 +55,11 @@ class _PassportUploadScreenState extends State<PassportUploadScreen> {
   bool get _isRejected => _passportStatus == 'rejected';
   bool get _isPending  => _passportStatus == 'uploaded';
 
-  static bool _isPdf(String path) => path.toLowerCase().endsWith('.pdf');
+  // The signed passport URL now carries `?exp=...&sig=...` after the
+  // filename, so a plain endsWith('.pdf') stopped matching — check the
+  // path component only, ignoring any query string.
+  static bool _isPdf(String path) =>
+      Uri.parse(path).path.toLowerCase().endsWith('.pdf');
 
   @override
   void initState() {

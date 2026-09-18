@@ -44,10 +44,10 @@ class Visitor {
         emailVerified: j['email_verified'] ?? false,
       );
 
-  Visitor copyWith({bool? emailVerified}) => Visitor(
+  Visitor copyWith({bool? emailVerified, String? email}) => Visitor(
         id: id,
         fullName: fullName,
-        email: email,
+        email: email ?? this.email,
         phone: phone,
         nationality: nationality,
         passportNumber: passportNumber,
@@ -666,4 +666,22 @@ class TentReviewSummary {
       totalReviews: (j['total_reviews'] as num?)?.toInt() ?? 0,
     );
   }
+}
+
+/// A booking of this guest's that's actually eligible to be reviewed — see
+/// TentRepository.myReviewableBooking.
+class ReviewableBooking {
+  final String bookingId;
+  final bool alreadyReviewed;
+
+  const ReviewableBooking({
+    required this.bookingId,
+    required this.alreadyReviewed,
+  });
+
+  factory ReviewableBooking.fromJson(Map<String, dynamic> j) =>
+      ReviewableBooking(
+        bookingId: j['booking_id']?.toString() ?? '',
+        alreadyReviewed: j['already_reviewed'] as bool? ?? false,
+      );
 }

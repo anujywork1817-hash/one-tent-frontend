@@ -99,6 +99,13 @@ class AuthRepository {
   Future<void> resendVerification() async {
     await _api.dio.post('/auth/resend-verification');
   }
+
+  /// Corrects a mistyped signup email before it's verified — the server
+  /// re-checks uniqueness, updates the account, and mails a fresh code to
+  /// the corrected address. Rejected once the account is already verified.
+  Future<void> updateEmail(String email) async {
+    await _api.dio.patch('/auth/update-email', data: {'email': email});
+  }
 }
 
 class TentRepository {
@@ -288,6 +295,16 @@ class TentRepository {
     return TentReviewSummary.fromJson(res.data['data'] ?? {});
   }
 
+  /// Whether the signed-in guest actually has a confirmed/completed stay at
+  /// this tent to review — the tent detail screen's "Write a review" only
+  /// offers what the guest can really do, not a button that 404s for anyone
+  /// who's never booked here. Null when there's no qualifying booking.
+  Future<ReviewableBooking?> myReviewableBooking(String tentId) async {
+    final res = await _api.dio.get('/tents/$tentId/my-review-booking');
+    final data = res.data['data'];
+    return data == null ? null : ReviewableBooking.fromJson(data);
+  }
+
   /// The refund attached to a booking, or null if there is none.
   Future<Map<String, dynamic>?> bookingRefund(String bookingId) async {
     final res = await _api.dio.get('/bookings/$bookingId/refund');
@@ -361,6 +378,10 @@ class NotificationRepository {
 
   Future<void> markAllRead() async {
     await _api.dio.patch('/notifications/read-all');
+  }
+
+  Future<void> markRead(String id) async {
+    await _api.dio.patch('/notifications/$id/read');
   }
 
   Future<void> saveToken(String fcmToken, {String platform = 'android'}) async {

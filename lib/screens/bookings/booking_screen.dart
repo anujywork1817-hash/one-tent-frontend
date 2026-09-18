@@ -21,6 +21,7 @@ const Color _kBodyBg = Color(0xFFFFFFFF);
 const Color _kCardBg = Color(0xFFFFFFFF);
 const Color _kGreen = Color(0xFF2E7D32);
 const Color _kError = Color(0xFFC0392B);
+const Color _kRangeBlue = Color(0xFF2E6E9E); // nights between check-in/out
 // ─────────────────────────────────────────────────────────────────────────────
 
 const _maxTents = 5;
@@ -89,7 +90,14 @@ class _BookingScreenState extends State<BookingScreen> {
       final visitor = context.read<AuthProvider>().visitor;
       if (visitor != null) {
         _nameCtrl.text = visitor.fullName;
-        _phoneCtrl.text = visitor.phone;
+        // The profile stores the number as entered at signup, which for
+        // most guests includes a country code (e.g. "+919699488429"). This
+        // field is India-only and digits-only with a 10-digit cap, so a
+        // code left in front just got truncated from the wrong end (e.g.
+        // "9199488429" — the last real digit chopped off, not the "91").
+        // Strip it here so what's prefilled is already the clean local
+        // number the field actually expects.
+        _phoneCtrl.text = _localTenDigits(visitor.phone);
         if (visitor.passportNumber.isNotEmpty) {
           _idNumberCtrl.text = visitor.passportNumber;
         }
@@ -99,6 +107,15 @@ class _BookingScreenState extends State<BookingScreen> {
       });
       _loadDayAvailability();
     });
+  }
+
+  /// Strips a leading country code and returns just the last 10 digits —
+  /// "+919699488429", "919699488429" and "9699488429" all become
+  /// "9699488429". Digits-only input already ≤10 long is returned as-is.
+  String _localTenDigits(String raw) {
+    final digits = raw.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.length <= 10) return digits;
+    return digits.substring(digits.length - 10);
   }
 
   Future<void> _loadDayAvailability() async {
@@ -215,30 +232,18 @@ class _BookingScreenState extends State<BookingScreen> {
                     _sectionLabel('Select Dates'),
                     const SizedBox(height: 10),
                     _card(child: Column(children: [
-                      Row(children: [
+                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                         Expanded(
                             child: _dateBox('CHECK-IN', _checkInDate)),
                         const SizedBox(width: 10),
                         Expanded(
-                            child: _dateBox('CHECK-OUT', _checkOutDate)),
+                            child: _dateBox('CHECK-OUT', _checkOutDate,
+                                nights: _duration)),
                       ]),
                       const SizedBox(height: 14),
                       _availabilityLegend(),
                       const SizedBox(height: 14),
                       _calendar(),
-                      if (_duration > 0) ...[
-                        const SizedBox(height: 10),
-                        Row(children: [
-                          const Icon(Icons.nights_stay_rounded,
-                              size: 14, color: _kOrange),
-                          const SizedBox(width: 6),
-                          Text('$_duration night${_duration == 1 ? '' : 's'}',
-                              style: const TextStyle(
-                                  color: _kMuted,
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w600)),
-                        ]),
-                      ],
                     ])),
                     const SizedBox(height: 22),
 
@@ -258,55 +263,73 @@ class _BookingScreenState extends State<BookingScreen> {
                     )),
                     const SizedBox(height: 14),
 
-                    _card(child: Column(children: [
-                      // Guests follows the bed type directly — Single is 1
-                      // adult per tent, Double is 2 — so this is a readout,
-                      // not an independent stepper that could drift from it.
-                      Row(children: [
-                        const Icon(Icons.people_outline,
-                            size: 20, color: _kOrange),
-                        const SizedBox(width: 10),
-                        const Expanded(
-                          child: Text('Guests',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: _kInk)),
+                    // ── Guests ──────────────────────────────────────────
+                    // Follows the bed type directly — Single is 1 adult per
+                    // tent, Double is 2 — so this is a readout, not an
+                    // independent stepper that could drift from it. Its own
+                    // labeled section (rather than sharing a card with
+                    // Tents below) so the guest count is the first thing
+                    // seen after choosing a bed type, not buried under it.
+                    _sectionLabel('Guests'),
+                    const SizedBox(height: 10),
+                    _card(child: Row(children: [
+                      const Icon(Icons.people_outline,
+                          size: 20, color: _kOrange),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text('Guests',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                    color: _kInk)),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${_bedType == 'single' ? 'Single' : 'Double'} bed × $_tents tent${_tents == 1 ? '' : 's'}',
+                              style: const TextStyle(
+                                  fontSize: 12, color: _kMuted),
+                            ),
+                          ],
                         ),
-                        Text(
-                          '$_guests adult${_guests == 1 ? '' : 's'}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w800,
-                              fontSize: 15,
-                              color: _kInk),
-                        ),
-                      ]),
-                      const SizedBox(height: 4),
-                      Text(
-                        '${_bedType == 'single' ? 'Single' : 'Double'} bed × $_tents tent${_tents == 1 ? '' : 's'}',
-                        style: const TextStyle(fontSize: 12, color: _kMuted),
                       ),
-                      const Divider(height: 26, color: _kBorder),
-                      _stepperRow(
-                        title: 'Tents',
-                        subtitle: 'Units to book (up to $_maxTents)',
-                        value: _tents,
-                        onMinus: _tents > 1
-                            ? () => setState(() {
-                                  _tents--;
-                                  _guests = _maxGuestsForTents;
-                                  _syncGuestControllers();
-                                })
-                            : null,
-                        onPlus: _tents < _maxTents
-                            ? () => setState(() {
-                                  _tents++;
-                                  _guests = _maxGuestsForTents;
-                                  _syncGuestControllers();
-                                })
-                            : null,
+                      Text(
+                        '$_guests adult${_guests == 1 ? '' : 's'}',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 15,
+                            color: _kInk),
                       ),
                     ])),
+                    const SizedBox(height: 14),
+
+                    // ── Tents ───────────────────────────────────────────
+                    // How many tents of this type to book in one go — capped
+                    // at _maxTents (5) per booking. Bumping this recomputes
+                    // Guests above via _maxGuestsForTents, so the two never
+                    // drift out of sync.
+                    _sectionLabel('Tents'),
+                    const SizedBox(height: 10),
+                    _card(child: _stepperRow(
+                      title: 'Tents',
+                      subtitle: 'Units to book (up to $_maxTents per person)',
+                      value: _tents,
+                      onMinus: _tents > 1
+                          ? () => setState(() {
+                                _tents--;
+                                _guests = _maxGuestsForTents;
+                                _syncGuestControllers();
+                              })
+                          : null,
+                      onPlus: _tents < _maxTents
+                          ? () => setState(() {
+                                _tents++;
+                                _guests = _maxGuestsForTents;
+                                _syncGuestControllers();
+                              })
+                          : null,
+                    )),
                     const SizedBox(height: 14),
 
                     _sectionLabel('Traveling With Children?'),
@@ -349,12 +372,14 @@ class _BookingScreenState extends State<BookingScreen> {
                         _stepperRow(
                           title: 'Above 5 years',
                           subtitle:
-                              '₹${_childFeePerHead.toStringAsFixed(0)} per child, added to the bill',
+                              '₹${_childFeePerHead.toStringAsFixed(0)} per child, up to 2 per booking',
                           value: _childrenAbove5,
                           onMinus: _childrenAbove5 > 0
                               ? () => setState(() => _childrenAbove5--)
                               : null,
-                          onPlus: () => setState(() => _childrenAbove5++),
+                          onPlus: _childrenAbove5 < 2
+                              ? () => setState(() => _childrenAbove5++)
+                              : null,
                         ),
                       ],
                     ])),
@@ -669,14 +694,20 @@ class _BookingScreenState extends State<BookingScreen> {
     );
   }
 
-  Widget _dateBox(String label, DateTime? date) {
-    final fmt = DateFormat('MMM dd');
+  /// [nights] is only passed for the check-out box — shown as an extra line
+  /// under the weekday once both dates are picked, so the stay length is
+  /// visible right where the range was just chosen instead of only lower
+  /// down the screen.
+  Widget _dateBox(String label, DateTime? date, {int? nights}) {
+    final dateFmt = DateFormat('MMM d, yyyy');
+    final dayFmt = DateFormat('EEE');
+    final picked = date != null;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: _kFaint,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: _kBorder),
+        border: Border.all(color: picked ? _kOrange : _kBorder),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -688,11 +719,23 @@ class _BookingScreenState extends State<BookingScreen> {
                   fontWeight: FontWeight.w700,
                   letterSpacing: 0.5)),
           const SizedBox(height: 4),
-          Text(date != null ? fmt.format(date) : 'Select',
+          Text(picked ? dateFmt.format(date) : 'Select',
               style: TextStyle(
                   fontSize: 15,
                   fontWeight: FontWeight.w700,
-                  color: date != null ? _kInk : _kMuted)),
+                  color: picked ? _kInk : _kMuted)),
+          if (picked) ...[
+            const SizedBox(height: 2),
+            Text(dayFmt.format(date),
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600, color: _kOrange)),
+          ],
+          if (picked && nights != null && nights > 0) ...[
+            const SizedBox(height: 2),
+            Text('$nights night${nights == 1 ? '' : 's'}',
+                style: const TextStyle(
+                    fontSize: 13, fontWeight: FontWeight.w600, color: _kOrange)),
+          ],
         ],
       ),
     );
@@ -811,15 +854,23 @@ class _BookingScreenState extends State<BookingScreen> {
           final dayDisabled = isPast || isFullyBooked;
 
           // Base fill from real per-day occupancy when it's loaded; falls
-          // back to the plain "open" look while it's still loading.
+          // back to the plain "open" look while it's still loading. A fully
+          // booked day is a solid dark red — a faint tint made it easy to
+          // miss that the date isn't actually selectable. "limited" used to
+          // be a near-white pale yellow (0xFFFFF3D6) that was barely
+          // distinguishable from an empty cell on a white background —
+          // guests read those dates as blank/missing rather than "a few
+          // left". Matched to the legend dot's actual amber instead.
           Color baseFill = const Color(0xFFE3F2E1); // green — available
           if (avail != null) {
             baseFill = switch (avail.status) {
-              'booked' => _kError.withValues(alpha: 0.12),
-              'limited' => const Color(0xFFFFF3D6), // yellow — few remain
+              'booked' => const Color(0xFF8E1D1D), // dark red — fully booked
+              'limited' => const Color(0xFFF5C344), // amber — few remain
               _ => const Color(0xFFE3F2E1),
             };
           }
+
+          final bold = selected || inRange || isFullyBooked;
 
           return GestureDetector(
             onTap: dayDisabled ? null : () => _onDayTapped(date),
@@ -831,22 +882,17 @@ class _BookingScreenState extends State<BookingScreen> {
                   color: selected
                       ? _kOrange
                       : inRange
-                          ? _kOrange.withValues(alpha: 0.15)
+                          ? _kRangeBlue
                           : (isPast ? Colors.transparent : baseFill),
                   shape: BoxShape.circle,
                 ),
                 child: Text('$day',
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight:
-                          selected ? FontWeight.w800 : FontWeight.w600,
-                      color: selected
+                      fontWeight: bold ? FontWeight.w800 : FontWeight.w600,
+                      color: bold
                           ? Colors.white
-                          : (isPast
-                              ? _kMuted.withValues(alpha: 0.4)
-                              : isFullyBooked
-                                  ? _kError
-                                  : _kInk),
+                          : (isPast ? _kMuted.withValues(alpha: 0.4) : _kInk),
                     )),
               ),
             ),

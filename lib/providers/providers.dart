@@ -105,26 +105,44 @@ class AuthProvider extends ChangeNotifier {
 
   // ── Init (restore session) ────────────────────────────────────────────────
   Future<void> _init() async {
-    final token = await _storage.read(key: AppConstants.tokenKey);
-    final visitorJson = await _storage.read(key: AppConstants.visitorKey);
+    try {
+      // flutter_secure_storage's read() can throw (e.g. BadPaddingException)
+      // if a value was encrypted under an Android Keystore key that's since
+      // been invalidated — most commonly a leftover entry from a previous
+      // install of this app. Left uncaught, that exception used to escape
+      // _init() entirely: _isLoading never flipped to false, and the splash
+      // screen (gated on it) waited forever. Any failure here now just means
+      // "no restorable session" — same as if the keys were never set.
+      final token = await _storage.read(key: AppConstants.tokenKey);
+      final visitorJson = await _storage.read(key: AppConstants.visitorKey);
 
-    if (token != null && visitorJson != null) {
-      try {
-        _visitor =
-            Visitor.fromJson(jsonDecode(visitorJson) as Map<String, dynamic>);
-        _isAuthenticated = true;
-        notifyListeners();
-
+      if (token != null && visitorJson != null) {
         try {
-          final meMap = await _authRepo.getMe();
-          _visitor = Visitor.fromJson(meMap);
-          await _storage.write(
-              key: AppConstants.visitorKey, value: jsonEncode(meMap));
+          _visitor = Visitor.fromJson(
+              jsonDecode(visitorJson) as Map<String, dynamic>);
+          _isAuthenticated = true;
           notifyListeners();
-        } catch (_) {}
-      } catch (_) {
-        await _storage.deleteAll();
+
+          try {
+            final meMap = await _authRepo.getMe();
+            _visitor = Visitor.fromJson(meMap);
+            await _storage.write(
+                key: AppConstants.visitorKey, value: jsonEncode(meMap));
+            notifyListeners();
+          } catch (_) {}
+        } catch (_) {
+          await _storage.deleteAll();
+        }
       }
+    } catch (_) {
+      // The stored token/visitor blob itself couldn't even be read back —
+      // wipe it so the corrupt value doesn't keep tripping this on every
+      // future launch, and fall through to the logged-out state below.
+      try {
+        await _storage.deleteAll();
+      } catch (_) {}
+      _isAuthenticated = false;
+      _visitor = null;
     }
 
     _isLoading = false;
@@ -283,6 +301,29 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  /// Corrects a mistyped email before it's verified — see
+  /// AuthRepository.updateEmail. The server sends a fresh code to the
+  /// corrected address, so the verify-email screen can just re-show its
+  /// "enter the code" state once this returns true.
+  Future<bool> updateEmail(String email) async {
+    _error = null;
+    try {
+      await _authRepo.updateEmail(email);
+      if (_visitor != null) {
+        _visitor = _visitor!.copyWith(email: email);
+        await _storage.write(
+            key: AppConstants.visitorKey,
+            value: jsonEncode(_visitorToMap(_visitor)));
+      }
+      notifyListeners();
+      return true;
+    } catch (e) {
+      _error = dioErrorMessage(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   // ── Refresh Profile ───────────────────────────────────────────────────────
   Future<void> refreshProfile() async {
     try {
@@ -426,6 +467,10 @@ class AuthProvider extends ChangeNotifier {
 
   Future<void> markAllNotificationsRead() async {
     await _notifRepo.markAllRead();
+  }
+
+  Future<void> markNotificationRead(String id) async {
+    await _notifRepo.markRead(id);
   }
 
   // ── Private helpers ───────────────────────────────────────────────────────
@@ -670,6 +715,23 @@ class TentProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Same fetch as [loadMyBookings], but never flips [state] to loading —
+  /// used for background/periodic refreshes so a new booking or a status
+  /// change (confirmed, refunded, …) just quietly appears in the list
+  /// instead of replacing it with a full-screen spinner every poll. Silent
+  /// on failure too — a dropped poll shouldn't surface an error banner over
+  /// an otherwise-fine list; the next poll or a manual pull-to-refresh will
+  /// just try again.
+  Future<void> refreshMyBookingsQuietly() async {
+    try {
+      final fresh = await _tentRepo.myBookings();
+      _bookings = fresh;
+      notifyListeners();
+    } catch (_) {
+      // Ignored — see doc comment above.
+    }
+  }
+
   /// One booking, re-fetched from the server. Used by the detail screen's
   /// pull-to-refresh, where status, check-in and refund state can all have
   /// moved on since the list was loaded. Returns null if the fetch fails.
@@ -749,6 +811,16 @@ class TentProvider extends ChangeNotifier {
       return await _tentRepo.tentReviews(tentId);
     } catch (_) {
       return const TentReviewSummary();
+    }
+  }
+
+  /// Null when this guest has no confirmed/completed booking for this tent —
+  /// see TentRepository.myReviewableBooking.
+  Future<ReviewableBooking?> myReviewableBooking(String tentId) async {
+    try {
+      return await _tentRepo.myReviewableBooking(tentId);
+    } catch (_) {
+      return null;
     }
   }
 

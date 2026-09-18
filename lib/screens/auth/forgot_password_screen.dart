@@ -30,6 +30,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   bool _loading = false;
   bool _sent = false;
   bool _resetDone = false;
+  bool _obscure = true;
   String? _error;
 
   @override
@@ -320,7 +321,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
           ),
           child: TextField(
             controller: _newPassCtrl,
-            obscureText: true,
+            obscureText: _obscure,
             style: const TextStyle(color: _kTextDark, fontSize: 14),
             decoration: InputDecoration(
               filled: false,
@@ -328,6 +329,16 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               labelStyle: const TextStyle(color: _kTextMuted, fontSize: 13),
               prefixIcon:
                   const Icon(Icons.lock_outline, color: _kTextMuted, size: 20),
+              suffixIcon: GestureDetector(
+                onTap: () => setState(() => _obscure = !_obscure),
+                child: Icon(
+                  _obscure
+                      ? Icons.visibility_off_outlined
+                      : Icons.visibility_outlined,
+                  color: _kTextMuted,
+                  size: 20,
+                ),
+              ),
               border: InputBorder.none,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16),

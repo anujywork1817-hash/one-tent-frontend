@@ -34,7 +34,7 @@ const _pages = [
         'Book modern, comfortable capsule tents right at the Mela grounds. Choose from Single, Double, and Luxury options.',
   ),
   _OnboardPage(
-    image: 'assets/images/calendar_banner.jpg',
+    image: 'assets/images/onboarding_trishul.png',
     title: 'Easy Booking',
     subtitle:
         'Browse available tents, pick your dates, and confirm your stay in minutes. Your spiritual journey awaits.',

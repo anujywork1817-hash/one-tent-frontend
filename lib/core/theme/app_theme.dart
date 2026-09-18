@@ -207,6 +207,19 @@ class AppTheme {
       ),
       scaffoldBackgroundColor: AppColors.background,
 
+      // Default styling for any SnackBar that doesn't set its own colors —
+      // without this, the base dark ColorScheme above left plain-text
+      // snackbars rendering dark text on a dark/undefined background,
+      // effectively unreadable (e.g. the Edit Profile "updated" toast).
+      snackBarTheme: const SnackBarThemeData(
+        backgroundColor: Color(0xFF4A1000), // brand maroon
+        contentTextStyle:
+            TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.all(Radius.circular(12))),
+      ),
+
       // ── App bar ──────────────────────────
       appBarTheme: const AppBarTheme(
         backgroundColor: AppColors.darkBlue,

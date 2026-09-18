@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../core/constants/app_constants.dart';
+import '../../data/models/models.dart';
 import '../../providers/providers.dart';
 import '../../widgets/tent_card.dart';
 import '../../widgets/handcrafted.dart';
@@ -39,6 +40,16 @@ class _HomeScreenState extends State<HomeScreen> {
   // the results but leaves the typed text sitting in the box, so the clear
   // button looks broken.
   final _searchCtrl = TextEditingController();
+  // Drives the live suggestions dropdown — shown only while the field is
+  // actually focused, so it doesn't linger once a suggestion's been tapped
+  // and the query still matches something.
+  final _searchFocus = FocusNode();
+
+  // Real unread state — the dot on the bell only shows when there's an
+  // actual unread notification, checked fresh whenever this screen loads
+  // (including the "back from notifications" case, via WidgetsBindingObserver
+  // below).
+  bool _hasUnreadNotifications = false;
 
   @override
   void initState() {
@@ -46,7 +57,29 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadTents();
       _maybeShowPassportPrompt();
+      _refreshUnreadNotifications();
     });
+    // The dropdown needs to appear/disappear on focus change alone (no text
+    // change needed), which onChanged never fires for.
+    _searchFocus.addListener(() => setState(() {}));
+  }
+
+  Future<void> _refreshUnreadNotifications() async {
+    try {
+      final list = await context.read<AuthProvider>().getNotifications();
+      if (!mounted) return;
+      setState(() => _hasUnreadNotifications = list.any((n) => !n.isRead));
+    } catch (_) {
+      // Leave whatever it was showing — a failed check shouldn't flip an
+      // already-correct dot off.
+    }
+  }
+
+  Future<void> _openNotifications() async {
+    await context.push('/notifications');
+    // Reading (or "mark all read") happens on that screen — re-check on the
+    // way back so the dot clears the moment it's no longer accurate.
+    _refreshUnreadNotifications();
   }
 
   // Shown exactly once, right after email verification succeeds — nudges
@@ -78,6 +111,7 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void dispose() {
     _searchCtrl.dispose();
+    _searchFocus.dispose();
     super.dispose();
   }
 
@@ -86,83 +120,18 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _searchQuery = '');
   }
 
+  void _selectSuggestion(CapsuleTent tent) {
+    _searchFocus.unfocus();
+    _searchCtrl.text = tent.name;
+    setState(() => _searchQuery = tent.name);
+    context.push('/tent/${tent.id}', extra: tent);
+  }
+
   Future<void> _loadTents() async {
     if (mounted) context.read<TentProvider>().loadTents();
   }
 
   void _filterByType(String? type) => setState(() => _selectedType = type);
-
-  void _showSortBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      backgroundColor: _kCardBg,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24))),
-      builder: (ctx) => Padding(
-        padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                width: 36,
-                height: 4,
-                margin: const EdgeInsets.only(bottom: 18),
-                decoration: BoxDecoration(
-                    color: _kBorder, borderRadius: BorderRadius.circular(2)),
-              ),
-            ),
-            const Text('Sort by',
-                style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: _kTextDark)),
-            const SizedBox(height: 14),
-            ...['Popular', 'Price: Low to High', 'Price: High to Low']
-                .map((option) {
-              final isSelected = _sortBy == option;
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 10),
-                child: GestureDetector(
-                  onTap: () {
-                    setState(() => _sortBy = option);
-                    Navigator.pop(ctx);
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 16, vertical: 14),
-                    decoration: BoxDecoration(
-                      color: isSelected
-                          ? _kGold.withValues(alpha: 0.08)
-                          : _kBodyBg,
-                      border: Border.all(color: isSelected ? _kGold : _kBorder),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(option,
-                            style: TextStyle(
-                                fontWeight: isSelected
-                                    ? FontWeight.w600
-                                    : FontWeight.w400,
-                                fontSize: 14,
-                                color: isSelected ? _kGold : _kTextMid)),
-                        if (isSelected)
-                          const Icon(Icons.check_circle,
-                              color: _kGold, size: 18),
-                      ],
-                    ),
-                  ),
-                ),
-              );
-            }),
-          ],
-        ),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -177,6 +146,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 t.tentNumber.toLowerCase().contains(q) ||
                 t.description.toLowerCase().contains(q);
           }).toList();
+
+    // Live typeahead under the search bar — same match as displayTents
+    // above, just capped short and shown only while the field has focus, so
+    // it reads as "suggestions while typing" rather than a second copy of
+    // the results grid.
+    final showSuggestions = _searchFocus.hasFocus && _searchQuery.isNotEmpty;
+    final suggestions = displayTents.take(5).toList();
 
     final typedTents = _selectedType == null
         ? displayTents
@@ -256,18 +232,19 @@ class _HomeScreenState extends State<HomeScreen> {
                   IconButton(
                     icon: const Icon(Icons.notifications_outlined,
                         color: _kCream, size: 22),
-                    onPressed: () => context.push('/notifications'),
+                    onPressed: _openNotifications,
                   ),
-                  Positioned(
-                    right: 10,
-                    top: 10,
-                    child: Container(
-                      width: 8,
-                      height: 8,
-                      decoration: const BoxDecoration(
-                          color: Colors.redAccent, shape: BoxShape.circle),
+                  if (_hasUnreadNotifications)
+                    Positioned(
+                      right: 10,
+                      top: 10,
+                      child: Container(
+                        width: 8,
+                        height: 8,
+                        decoration: const BoxDecoration(
+                            color: Colors.redAccent, shape: BoxShape.circle),
+                      ),
                     ),
-                  ),
                 ]),
                 const SizedBox(width: 4),
               ],
@@ -382,49 +359,62 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Container(
                 color: _kBgDeep,
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: _kHeroBg,
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: _kGold.withValues(alpha: 0.25)),
-                    boxShadow: [
-                      BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.3),
-                          blurRadius: 16,
-                          offset: const Offset(0, 6)),
-                    ],
-                  ),
-                  child: TextField(
-                    controller: _searchCtrl,
-                    onChanged: (v) => setState(() => _searchQuery = v),
-                    style: const TextStyle(fontSize: 14, color: _kCream),
-                    cursorColor: _kGold,
-                    decoration: InputDecoration(
-                      // The global theme's filled:true paints a square fill that
-                      // ignores this container's corner radius.
-                      filled: false,
-                      hintText: 'Search by location, tent type...',
-                      hintStyle: TextStyle(
-                          color: _kTextLight.withValues(alpha: 0.7),
-                          fontSize: 14),
-                      prefixIcon:
-                          const Icon(Icons.search, color: _kGold, size: 20),
-                      // IconButton rather than a bare GestureDetector: it fills
-                      // the suffix box, so taps landing just off the 20px glyph
-                      // still register.
-                      suffixIcon: _searchQuery.isNotEmpty
-                          ? IconButton(
-                              onPressed: _clearSearch,
-                              icon: const Icon(Icons.close,
-                                  color: _kTextLight, size: 20),
-                              tooltip: 'Clear search',
-                            )
-                          : null,
-                      border: InputBorder.none,
-                      contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 14),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Container(
+                      decoration: BoxDecoration(
+                        color: _kHeroBg,
+                        borderRadius: BorderRadius.circular(14),
+                        border:
+                            Border.all(color: _kGold.withValues(alpha: 0.25)),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.3),
+                              blurRadius: 16,
+                              offset: const Offset(0, 6)),
+                        ],
+                      ),
+                      child: TextField(
+                        controller: _searchCtrl,
+                        focusNode: _searchFocus,
+                        onChanged: (v) => setState(() => _searchQuery = v),
+                        style: const TextStyle(fontSize: 14, color: _kCream),
+                        cursorColor: _kGold,
+                        decoration: InputDecoration(
+                          // The global theme's filled:true paints a square fill that
+                          // ignores this container's corner radius.
+                          filled: false,
+                          hintText: 'Search by location, tent type...',
+                          hintStyle: TextStyle(
+                              color: _kTextLight.withValues(alpha: 0.7),
+                              fontSize: 14),
+                          prefixIcon: const Icon(Icons.search,
+                              color: _kGold, size: 20),
+                          // IconButton rather than a bare GestureDetector: it fills
+                          // the suffix box, so taps landing just off the 20px glyph
+                          // still register.
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  onPressed: _clearSearch,
+                                  icon: const Icon(Icons.close,
+                                      color: _kTextLight, size: 20),
+                                  tooltip: 'Clear search',
+                                )
+                              : null,
+                          border: InputBorder.none,
+                          contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16, vertical: 14),
+                        ),
+                      ),
                     ),
-                  ),
+                    if (showSuggestions)
+                      _SearchSuggestions(
+                        tents: suggestions,
+                        query: _searchQuery,
+                        onTap: _selectSuggestion,
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -474,33 +464,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 14),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          const Text('Popular Categories',
-                              style: TextStyle(
-                                  fontSize: 17,
-                                  fontWeight: FontWeight.w700,
-                                  color: _kTextDark)),
-                          GestureDetector(
-                            // This used to just call _filterByType(null),
-                            // which resets the home page's own category
-                            // filter — a no-op (and so, felt "dead") on the
-                            // common case where nothing was filtered yet.
-                            // "View all" should actually take you to the
-                            // full listing.
-                            onTap: () => context.go('/search'),
-                            child: const Text('View all',
-                                style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w500,
-                                    color: _kGold)),
-                          ),
-                        ],
-                      ),
+                    const Padding(
+                      padding: EdgeInsets.fromLTRB(16, 20, 16, 14),
+                      child: Text('Popular Categories',
+                          style: TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.w700,
+                              color: _kTextDark)),
                     ),
                     SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
@@ -520,60 +490,27 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ),
 
-            // ── Count + Sort ──────────────────────────────────
+            // ── Count ───────────────────────────────────────────
             SliverToBoxAdapter(
               child: Container(
                 color: _kBodyBg,
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    RichText(
-                      text: TextSpan(
-                        text: '${sortedTents.length} ',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            color: _kGold),
-                        children: [
-                          TextSpan(
-                              text: 'stays available',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 14,
-                                  color: _kTextMid)),
-                        ],
-                      ),
-                    ),
-                    GestureDetector(
-                      onTap: _showSortBottomSheet,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        decoration: BoxDecoration(
-                          color: _kCardBg,
-                          border: Border.all(color: _kBorder),
-                          borderRadius: BorderRadius.circular(10),
-                          boxShadow: [
-                            BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.06),
-                                blurRadius: 6),
-                          ],
-                        ),
-                        child: const Row(children: [
-                          Icon(Icons.tune, size: 15, color: _kGold),
-                          SizedBox(width: 6),
-                          Text('Sort',
-                              style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: _kTextDark)),
-                          SizedBox(width: 4),
-                          Icon(Icons.expand_more, size: 15, color: _kGold),
-                        ]),
-                      ),
-                    ),
-                  ],
+                child: RichText(
+                  text: TextSpan(
+                    text: '${sortedTents.length} ',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                        color: _kGold),
+                    children: [
+                      TextSpan(
+                          text: 'stays available',
+                          style: TextStyle(
+                              fontWeight: FontWeight.w400,
+                              fontSize: 14,
+                              color: _kTextMid)),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -706,6 +643,97 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.white, borderRadius: BorderRadius.circular(20)),
         ),
       );
+}
+
+// ── Live search suggestions ─────────────────────────────────────────────────
+// Sits directly under the search bar, in the flow of the page (not a
+// floating overlay) — tapping a tent jumps straight to its detail screen.
+class _SearchSuggestions extends StatelessWidget {
+  final List<CapsuleTent> tents;
+  final String query;
+  final ValueChanged<CapsuleTent> onTap;
+
+  const _SearchSuggestions({
+    required this.tents,
+    required this.query,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      decoration: BoxDecoration(
+        color: _kHeroBg,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: _kGold.withValues(alpha: 0.25)),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 16,
+              offset: const Offset(0, 6)),
+        ],
+      ),
+      child: tents.isEmpty
+          ? Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Text('No tents match "$query"',
+                  style: TextStyle(
+                      color: _kTextLight.withValues(alpha: 0.8),
+                      fontSize: 13)),
+            )
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(tents.length, (i) {
+                final t = tents[i];
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (i > 0)
+                      Divider(
+                          height: 1,
+                          color: _kGold.withValues(alpha: 0.12),
+                          indent: 16,
+                          endIndent: 16),
+                    InkWell(
+                      onTap: () => onTap(t),
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 12),
+                        child: Row(children: [
+                          const Icon(Icons.search, size: 16, color: _kGold),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(t.name,
+                                    style: const TextStyle(
+                                        color: _kCream,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600)),
+                                Text(
+                                  '${t.tentType} · ${t.location}',
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                      color: _kTextLight.withValues(alpha: 0.85),
+                                      fontSize: 12),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Icon(Icons.north_west_rounded,
+                              size: 14, color: _kTextLight.withValues(alpha: 0.6)),
+                        ]),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+    );
+  }
 }
 
 // ── Explore banner data (Calendar / History / News / Offers) ───────────────

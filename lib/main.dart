@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'core/navigation/back_navigation.dart';
 import 'core/theme/app_theme.dart';
 import 'providers/providers.dart';
 import 'router/app_router.dart';
@@ -51,6 +52,8 @@ class KumbhApp extends StatelessWidget {
     final wishlistProvider = WishlistProvider();
     final supportProvider  = SupportProvider();
     final router = AppRouter(authProvider).router;
+    registerAppRouterForNativeBack(router);
+    initNativeBackChannel();
 
     return MultiProvider(
       providers: [
