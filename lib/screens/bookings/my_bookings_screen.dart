@@ -345,6 +345,31 @@ class _BookingCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
+                if (booking.isCheckedIn) ...[
+                  Container(
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: _kGreen.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.check_circle_rounded,
+                            size: 11, color: _kGreen),
+                        SizedBox(width: 4),
+                        Text('CHECKED IN',
+                            style: TextStyle(
+                                color: _kGreen,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.6)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                ],
                 Container(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -377,6 +402,13 @@ class _BookingCard extends StatelessWidget {
             ]),
             const SizedBox(height: 6),
 
+            Padding(
+              padding: const EdgeInsets.only(left: 22, bottom: 6),
+              child: Text(
+                'Check-in ${booking.checkInTimeLabel} \u00B7 Check-out ${booking.checkOutTimeLabel}',
+                style: const TextStyle(color: _kTextLight, fontSize: 12),
+              ),
+            ),
             // Nights / guests + price
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -397,18 +429,20 @@ class _BookingCard extends StatelessWidget {
             ),
 
             // QR code button (confirmed only)
-            if (booking.status == 'confirmed') ...[
+            if (booking.status == 'confirmed' &&
+                !booking.isCheckedIn &&
+                booking.checkOutDateTime.isAfter(DateTime.now())) ...[
               const SizedBox(height: 12),
               const Divider(color: _kBorder, height: 1),
               const SizedBox(height: 10),
               Align(
                 alignment: Alignment.centerRight,
                 child: GestureDetector(
-                  onTap: () =>
-                      context.push('/booking-qr/${booking.id}', extra: booking),
+                  onTap: () => context.push('/booking-scan/${booking.id}',
+                      extra: booking),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 14, vertical: 8),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                     decoration: BoxDecoration(
                       color: _kGold,
                       borderRadius: BorderRadius.circular(10),
@@ -416,9 +450,10 @@ class _BookingCard extends StatelessWidget {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.qr_code, size: 15, color: Colors.white),
+                        Icon(Icons.qr_code_scanner_rounded,
+                            size: 15, color: Colors.white),
                         SizedBox(width: 6),
-                        Text('View QR Code',
+                        Text('Scan QR',
                             style: TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,

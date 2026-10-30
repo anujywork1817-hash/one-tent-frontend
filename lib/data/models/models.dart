@@ -69,6 +69,7 @@ class CapsuleTent {
   final String description;
   final int capacity;
   final String? imageUrl;
+
   /// Every photo the admin uploaded for this tent, in order — imageUrl is
   /// just imageUrls.first, kept for the many call sites that only show one.
   final List<String> imageUrls;
@@ -168,8 +169,8 @@ class CapsuleTent {
               ? j['image_urls'][0] as String
               : j['image_url'],
       imageUrls: j['image_urls'] is List
-          ? List<String>.from(
-              (j['image_urls'] as List).where((u) => u is String && u.isNotEmpty))
+          ? List<String>.from((j['image_urls'] as List)
+              .where((u) => u is String && u.isNotEmpty))
           : (j['image_url'] != null && (j['image_url'] as String).isNotEmpty
               ? [j['image_url'] as String]
               : const []),
@@ -326,6 +327,11 @@ class TentBooking {
   final int childrenUnder5;
   final int childrenAbove5;
   final double childFee;
+  // Fixed by the backend (11:00 check-in / 11:00 check-out, IST).
+  final String checkInTime;
+  final String checkOutTime;
+  // Set once the guest has checked in (self-scan or desk); null before.
+  final DateTime? checkedInAt;
 
   const TentBooking({
     required this.id,
@@ -356,6 +362,9 @@ class TentBooking {
     this.childrenUnder5 = 0,
     this.childrenAbove5 = 0,
     this.childFee = 0,
+    this.checkInTime = '11:00',
+    this.checkOutTime = '11:00',
+    this.checkedInAt,
   });
 
   factory TentBooking.fromJson(Map<String, dynamic> j) {
@@ -403,6 +412,11 @@ class TentBooking {
       childrenUnder5: (j['children_under5'] as num?)?.toInt() ?? 0,
       childrenAbove5: (j['children_above5'] as num?)?.toInt() ?? 0,
       childFee: (j['child_fee'] ?? 0).toDouble(),
+      checkInTime: j['check_in_time']?.toString() ?? '11:00',
+      checkOutTime: j['check_out_time']?.toString() ?? '11:00',
+      checkedInAt: j['checked_in_at'] != null
+          ? DateTime.tryParse(j['checked_in_at'].toString())
+          : null,
     );
   }
 
@@ -410,7 +424,9 @@ class TentBooking {
   /// booking, or just this booking's own total otherwise.
   double get amountDue => groupTotalAmount ?? totalPrice;
 
-  TentBooking copyWith({String? status}) => TentBooking(
+  bool get isCheckedIn => checkedInAt != null;
+
+  TentBooking copyWith({String? status, DateTime? checkedInAt}) => TentBooking(
         id: id,
         tentId: tentId,
         tentName: tentName,
@@ -439,6 +455,9 @@ class TentBooking {
         childrenUnder5: childrenUnder5,
         childrenAbove5: childrenAbove5,
         childFee: childFee,
+        checkInTime: checkInTime,
+        checkOutTime: checkOutTime,
+        checkedInAt: checkedInAt ?? this.checkedInAt,
       );
 
   String get bookingRef =>
@@ -463,9 +482,28 @@ class TentBooking {
     }
   }
 
+  static DateTime _withClock(DateTime d, String hhmm) {
+    final parts = hhmm.split(':');
+    final h = int.tryParse(parts.first) ?? 11;
+    final m = parts.length > 1 ? (int.tryParse(parts[1]) ?? 0) : 0;
+    return DateTime(d.year, d.month, d.day, h, m);
+  }
+
+  static String _label(String hhmm) {
+    final parts = hhmm.split(':');
+    final h = int.tryParse(parts.first) ?? 11;
+    final m = parts.length > 1 ? parts[1] : '00';
+    final h12 = h % 12 == 0 ? 12 : h % 12;
+    return '$h12:$m ${h >= 12 ? 'PM' : 'AM'}';
+  }
+
+  /// "11:00 AM"
+  String get checkInTimeLabel => _label(checkInTime);
+  String get checkOutTimeLabel => _label(checkOutTime);
+
   DateTime get checkInDateTime {
     try {
-      return DateTime.parse(checkInDate);
+      return _withClock(DateTime.parse(checkInDate), checkInTime);
     } catch (_) {
       return DateTime.now();
     }
@@ -473,7 +511,7 @@ class TentBooking {
 
   DateTime get checkOutDateTime {
     try {
-      return DateTime.parse(checkOutDate);
+      return _withClock(DateTime.parse(checkOutDate), checkOutTime);
     } catch (_) {
       return DateTime.now().add(const Duration(days: 1));
     }

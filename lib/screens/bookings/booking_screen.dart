@@ -11,11 +11,11 @@ import '../../providers/providers.dart';
 import '../../widgets/tap_scale.dart';
 
 // ─── One Tent Design Tokens — same brand palette as the rest of the app ────
-const Color _kInk = Color(0xFF2D0F05);       // matches _kTextDark elsewhere
-const Color _kMuted = Color(0xFF7A4A30);     // matches _kTextMid elsewhere
-const Color _kFaint = Color(0xFFF3EEE7);     // matches the amenity-pill fill
-const Color _kBorder = Color(0xFFDDD0C4);    // matches _kBorderLight elsewhere
-const Color _kOrange = Color(0xFFD4891A);    // the app's actual gold
+const Color _kInk = Color(0xFF2D0F05); // matches _kTextDark elsewhere
+const Color _kMuted = Color(0xFF7A4A30); // matches _kTextMid elsewhere
+const Color _kFaint = Color(0xFFF3EEE7); // matches the amenity-pill fill
+const Color _kBorder = Color(0xFFDDD0C4); // matches _kBorderLight elsewhere
+const Color _kOrange = Color(0xFFD4891A); // the app's actual gold
 const Color _kOrangeDeep = Color(0xFF4A1000); // the app's actual maroon
 const Color _kBodyBg = Color(0xFFFFFFFF);
 const Color _kCardBg = Color(0xFFFFFFFF);
@@ -25,6 +25,23 @@ const Color _kRangeBlue = Color(0xFF2E6E9E); // nights between check-in/out
 // ─────────────────────────────────────────────────────────────────────────────
 
 const _maxTents = 5;
+
+// Booking is a phone-style form; on wide browsers keep it a readable column
+// so the calendar circles and fields don't balloon.
+const double _kMaxPageWidth = 520;
+
+class _PageWidth extends StatelessWidget {
+  final Widget child;
+  const _PageWidth({required this.child});
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: _kMaxPageWidth),
+          child: SizedBox(width: double.infinity, child: child),
+        ),
+      );
+}
 
 class BookingScreen extends StatefulWidget {
   final CapsuleTent tent;
@@ -39,7 +56,8 @@ class _BookingScreenState extends State<BookingScreen> {
   final _nameCtrl = TextEditingController();
   final _phoneCtrl = TextEditingController();
   final _idNumberCtrl = TextEditingController();
-  final String _idProofType = 'passport'; // Passport is the only ID proof accepted here.
+  final String _idProofType =
+      'passport'; // Passport is the only ID proof accepted here.
 
   // ── Dates ──────────────────────────────────────────────────────────────
   DateTime? _checkInDate;
@@ -78,8 +96,8 @@ class _BookingScreenState extends State<BookingScreen> {
   // asks the backend for more adults than the tent can actually hold.
   int get _maxGuestsForTents =>
       (_adultsPerTent < widget.tent.maxOccupancy
-              ? _adultsPerTent
-              : widget.tent.maxOccupancy) *
+          ? _adultsPerTent
+          : widget.tent.maxOccupancy) *
       _tents;
 
   @override
@@ -166,8 +184,7 @@ class _BookingScreenState extends State<BookingScreen> {
   double get _baseAmount => widget.tent.price1Day * _duration * _tents;
   double get _gstRate => widget.tent.price1Day < 7500 ? 12 : 18;
 
-  double get _discountAmount =>
-      _couponResult?.discountFor(_baseAmount) ?? 0;
+  double get _discountAmount => _couponResult?.discountFor(_baseAmount) ?? 0;
   double get _taxableAmount => _baseAmount - _discountAmount;
   double get _cgstAmount => _taxableAmount * _gstRate / 100 / 2;
   double get _sgstAmount => _taxableAmount * _gstRate / 100 / 2;
@@ -196,336 +213,354 @@ class _BookingScreenState extends State<BookingScreen> {
       body: SafeArea(
         child: Column(
           children: [
-            _Header(tent: widget.tent),
+            _PageWidth(child: _Header(tent: widget.tent)),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _TentSummaryCard(tent: widget.tent, priceLabel: priceLabel),
-                    const SizedBox(height: 22),
+                child: _PageWidth(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _TentSummaryCard(
+                          tent: widget.tent, priceLabel: priceLabel),
+                      const SizedBox(height: 22),
 
-                    _sectionLabel('Guest Details'),
-                    const SizedBox(height: 10),
-                    _card(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        _fieldLabel('Full name'),
-                        _textField(_nameCtrl, hint: 'Enter your full name'),
+                      _sectionLabel('Guest Details'),
+                      const SizedBox(height: 10),
+                      _card(
+                          child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _fieldLabel('Full name'),
+                          _textField(_nameCtrl, hint: 'Enter your full name'),
+                          const SizedBox(height: 14),
+                          _fieldLabel('Mobile number'),
+                          _textField(_phoneCtrl,
+                              hint: '10-digit mobile number',
+                              keyboardType: TextInputType.phone,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              maxLength: 10),
+                          const SizedBox(height: 16),
+                          _fieldLabel('Passport number'),
+                          _textField(_idNumberCtrl, hint: 'Passport number'),
+                        ],
+                      )),
+                      const SizedBox(height: 22),
+
+                      _sectionLabel('Select Dates'),
+                      const SizedBox(height: 10),
+                      _card(
+                          child: Column(children: [
+                        Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Expanded(
+                                  child: _dateBox('CHECK-IN', _checkInDate,
+                                      timeLabel: 'from 11:00 AM')),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                  child: _dateBox('CHECK-OUT', _checkOutDate,
+                                      nights: _duration,
+                                      timeLabel: 'until 11:00 AM')),
+                            ]),
                         const SizedBox(height: 14),
-                        _fieldLabel('Mobile number'),
-                        _textField(_phoneCtrl,
-                            hint: '10-digit mobile number',
-                            keyboardType: TextInputType.phone,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            maxLength: 10),
-                        const SizedBox(height: 16),
-                        _fieldLabel('Passport number'),
-                        _textField(_idNumberCtrl, hint: 'Passport number'),
-                      ],
-                    )),
-                    const SizedBox(height: 22),
-
-                    _sectionLabel('Select Dates'),
-                    const SizedBox(height: 10),
-                    _card(child: Column(children: [
-                      Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                        Expanded(
-                            child: _dateBox('CHECK-IN', _checkInDate)),
-                        const SizedBox(width: 10),
-                        Expanded(
-                            child: _dateBox('CHECK-OUT', _checkOutDate,
-                                nights: _duration)),
-                      ]),
-                      const SizedBox(height: 14),
-                      _availabilityLegend(),
-                      const SizedBox(height: 14),
-                      _calendar(),
-                    ])),
-                    const SizedBox(height: 22),
-
-                    _sectionLabel('Preferences'),
-                    const SizedBox(height: 10),
-                    _card(child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Bed type',
-                            style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: _kInk)),
+                        _availabilityLegend(),
+                        const SizedBox(height: 14),
+                        _stayTimesNote(),
                         const SizedBox(height: 10),
-                        _bedTypeToggle(),
-                      ],
-                    )),
-                    const SizedBox(height: 14),
+                        _calendar(),
+                      ])),
+                      const SizedBox(height: 22),
 
-                    // ── Guests ──────────────────────────────────────────
-                    // Follows the bed type directly — Single is 1 adult per
-                    // tent, Double is 2 — so this is a readout, not an
-                    // independent stepper that could drift from it. Its own
-                    // labeled section (rather than sharing a card with
-                    // Tents below) so the guest count is the first thing
-                    // seen after choosing a bed type, not buried under it.
-                    _sectionLabel('Guests'),
-                    const SizedBox(height: 10),
-                    _card(child: Row(children: [
-                      const Icon(Icons.people_outline,
-                          size: 20, color: _kOrange),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Guests',
-                                style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 14,
-                                    color: _kInk)),
-                            const SizedBox(height: 2),
-                            Text(
-                              '${_bedType == 'single' ? 'Single' : 'Double'} bed × $_tents tent${_tents == 1 ? '' : 's'}',
-                              style: const TextStyle(
-                                  fontSize: 12, color: _kMuted),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Text(
-                        '$_guests adult${_guests == 1 ? '' : 's'}',
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w800,
-                            fontSize: 15,
-                            color: _kInk),
-                      ),
-                    ])),
-                    const SizedBox(height: 14),
-
-                    // ── Tents ───────────────────────────────────────────
-                    // How many tents of this type to book in one go — capped
-                    // at _maxTents (5) per booking. Bumping this recomputes
-                    // Guests above via _maxGuestsForTents, so the two never
-                    // drift out of sync.
-                    _sectionLabel('Tents'),
-                    const SizedBox(height: 10),
-                    _card(child: _stepperRow(
-                      title: 'Tents',
-                      subtitle: 'Units to book (up to $_maxTents per person)',
-                      value: _tents,
-                      onMinus: _tents > 1
-                          ? () => setState(() {
-                                _tents--;
-                                _guests = _maxGuestsForTents;
-                                _syncGuestControllers();
-                              })
-                          : null,
-                      onPlus: _tents < _maxTents
-                          ? () => setState(() {
-                                _tents++;
-                                _guests = _maxGuestsForTents;
-                                _syncGuestControllers();
-                              })
-                          : null,
-                    )),
-                    const SizedBox(height: 14),
-
-                    _sectionLabel('Traveling With Children?'),
-                    const SizedBox(height: 10),
-                    _card(child: Column(children: [
-                      Row(children: [
-                        const Expanded(
-                          child: Text('Are any guests children?',
+                      _sectionLabel('Preferences'),
+                      const SizedBox(height: 10),
+                      _card(
+                          child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Bed type',
                               style: TextStyle(
-                                  fontWeight: FontWeight.w600,
+                                  fontWeight: FontWeight.bold,
                                   fontSize: 14,
                                   color: _kInk)),
-                        ),
-                        Switch(
-                          value: _travelingWithChildren,
-                          activeThumbColor: _kOrange,
-                          onChanged: (v) => setState(() {
-                            _travelingWithChildren = v;
-                            if (!v) {
-                              _childrenUnder5 = 0;
-                              _childrenAbove5 = 0;
-                            }
-                          }),
-                        ),
-                      ]),
-                      if (_travelingWithChildren) ...[
-                        const Divider(height: 26, color: _kBorder),
-                        _stepperRow(
-                          title: '5 years & under',
-                          subtitle: 'Free — up to 2 per booking',
-                          value: _childrenUnder5,
-                          onMinus: _childrenUnder5 > 0
-                              ? () => setState(() => _childrenUnder5--)
-                              : null,
-                          onPlus: _childrenUnder5 < 2
-                              ? () => setState(() => _childrenUnder5++)
-                              : null,
-                        ),
-                        const Divider(height: 26, color: _kBorder),
-                        _stepperRow(
-                          title: 'Above 5 years',
-                          subtitle:
-                              '₹${_childFeePerHead.toStringAsFixed(0)} per child, up to 2 per booking',
-                          value: _childrenAbove5,
-                          onMinus: _childrenAbove5 > 0
-                              ? () => setState(() => _childrenAbove5--)
-                              : null,
-                          onPlus: _childrenAbove5 < 2
-                              ? () => setState(() => _childrenAbove5++)
-                              : null,
-                        ),
-                      ],
-                    ])),
-                    const SizedBox(height: 22),
+                          const SizedBox(height: 10),
+                          _bedTypeToggle(),
+                        ],
+                      )),
+                      const SizedBox(height: 14),
 
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        _sectionLabel('Coupon Code'),
-                        GestureDetector(
-                          onTap: _showAllCoupons,
-                          child: Row(mainAxisSize: MainAxisSize.min, children: [
-                            const Icon(Icons.local_offer_outlined,
-                                size: 15, color: _kOrange),
-                            const SizedBox(width: 4),
-                            Text('View All',
-                                style: TextStyle(
-                                    color: _kOrange,
-                                    fontSize: 12.5,
-                                    fontWeight: FontWeight.w700)),
-                          ]),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (_suggestedCoupons.isNotEmpty)
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 10),
-                        child: Text(
-                          'Try: ${_suggestedCoupons.map((c) => c.code).join(' · ')}',
-                          style: const TextStyle(
-                              fontSize: 12, color: _kMuted, height: 1.4),
-                        ),
-                      ),
-                    Row(children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _couponCtrl,
-                          textCapitalization: TextCapitalization.characters,
-                          style: const TextStyle(fontSize: 14, color: _kInk),
-                          decoration: InputDecoration(
-                            isDense: true,
-                            hintText: 'Enter coupon code',
-                            hintStyle:
-                                const TextStyle(color: _kMuted, fontSize: 13),
-                            filled: true,
-                            fillColor: _kFaint,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                                vertical: 14, horizontal: 14),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      SizedBox(
-                        height: 48,
-                        child: ElevatedButton(
-                          onPressed: _couponLoading ? null : _applyCoupon,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _kOrange,
-                            foregroundColor: Colors.white,
-                            elevation: 0,
-                            padding:
-                                const EdgeInsets.symmetric(horizontal: 22),
-                            shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12)),
-                          ),
-                          child: _couponLoading
-                              ? const SizedBox(
-                                  width: 16,
-                                  height: 16,
-                                  child: CircularProgressIndicator(
-                                      strokeWidth: 2, color: Colors.white))
-                              : const Text('APPLY',
-                                  style: TextStyle(
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 12.5)),
-                        ),
-                      ),
-                    ]),
-                    if (_couponResult != null) ...[
-                      const SizedBox(height: 8),
-                      Row(children: [
-                        Icon(
-                          _couponResult!.valid
-                              ? Icons.check_circle
-                              : Icons.error_outline,
-                          size: 15,
-                          color: _couponResult!.valid ? _kGreen : _kError,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(_couponResult!.message,
-                              style: TextStyle(
-                                  fontSize: 12.5,
-                                  color: _couponResult!.valid
-                                      ? _kGreen
-                                      : _kError,
-                                  fontWeight: FontWeight.w600)),
-                        ),
-                      ]),
-                    ],
-                    const SizedBox(height: 22),
-
-                    if (_guests > 1) ...[
-                      _sectionLabel("Other Guests' Details"),
+                      // ── Guests ──────────────────────────────────────────
+                      // Follows the bed type directly — Single is 1 adult per
+                      // tent, Double is 2 — so this is a readout, not an
+                      // independent stepper that could drift from it. Its own
+                      // labeled section (rather than sharing a card with
+                      // Tents below) so the guest count is the first thing
+                      // seen after choosing a bed type, not buried under it.
+                      _sectionLabel('Guests'),
                       const SizedBox(height: 10),
-                      _OtherGuestsForm(
-                        nameCtrls: _guestNameCtrls,
-                        phoneCtrls: _guestPhoneCtrls,
-                      ),
-                      const SizedBox(height: 22),
-                    ],
+                      _card(
+                          child: Row(children: [
+                        const Icon(Icons.people_outline,
+                            size: 20, color: _kOrange),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Guests',
+                                  style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                      color: _kInk)),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${_bedType == 'single' ? 'Single' : 'Double'} bed × $_tents tent${_tents == 1 ? '' : 's'}',
+                                style: const TextStyle(
+                                    fontSize: 12, color: _kMuted),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Text(
+                          '$_guests adult${_guests == 1 ? '' : 's'}',
+                          style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: 15,
+                              color: _kInk),
+                        ),
+                      ])),
+                      const SizedBox(height: 14),
 
-                    _sectionLabel('Price Breakdown'),
-                    const SizedBox(height: 10),
-                    _PriceBreakdownCard(
-                      pricePerNight: widget.tent.price1Day,
-                      nights: _duration,
-                      tents: _tents,
-                      guests: _guests,
-                      childrenAbove5: _childrenAbove5,
-                      childrenUnder5: _childrenUnder5,
-                      baseAmount: _baseAmount,
-                      discountAmount: _discountAmount,
-                      couponCode: _couponResult?.valid == true
-                          ? _couponResult?.code
-                          : null,
-                      gstRate: _gstRate,
-                      cgstAmount: _cgstAmount,
-                      sgstAmount: _sgstAmount,
-                      childFee: _childFee,
-                      total: _totalPrice,
-                    ),
-                  ],
+                      // ── Tents ───────────────────────────────────────────
+                      // How many tents of this type to book in one go — capped
+                      // at _maxTents (5) per booking. Bumping this recomputes
+                      // Guests above via _maxGuestsForTents, so the two never
+                      // drift out of sync.
+                      _sectionLabel('Tents'),
+                      const SizedBox(height: 10),
+                      _card(
+                          child: _stepperRow(
+                        title: 'Tents',
+                        subtitle: 'Units to book (up to $_maxTents per person)',
+                        value: _tents,
+                        onMinus: _tents > 1
+                            ? () => setState(() {
+                                  _tents--;
+                                  _guests = _maxGuestsForTents;
+                                  _syncGuestControllers();
+                                })
+                            : null,
+                        onPlus: _tents < _maxTents
+                            ? () => setState(() {
+                                  _tents++;
+                                  _guests = _maxGuestsForTents;
+                                  _syncGuestControllers();
+                                })
+                            : null,
+                      )),
+                      const SizedBox(height: 14),
+
+                      _sectionLabel('Traveling With Children?'),
+                      const SizedBox(height: 10),
+                      _card(
+                          child: Column(children: [
+                        Row(children: [
+                          const Expanded(
+                            child: Text('Are any guests children?',
+                                style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: _kInk)),
+                          ),
+                          Switch(
+                            value: _travelingWithChildren,
+                            activeThumbColor: _kOrange,
+                            onChanged: (v) => setState(() {
+                              _travelingWithChildren = v;
+                              if (!v) {
+                                _childrenUnder5 = 0;
+                                _childrenAbove5 = 0;
+                              }
+                            }),
+                          ),
+                        ]),
+                        if (_travelingWithChildren) ...[
+                          const Divider(height: 26, color: _kBorder),
+                          _stepperRow(
+                            title: '5 years & under',
+                            subtitle: 'Free — up to 2 per booking',
+                            value: _childrenUnder5,
+                            onMinus: _childrenUnder5 > 0
+                                ? () => setState(() => _childrenUnder5--)
+                                : null,
+                            onPlus: _childrenUnder5 < 2
+                                ? () => setState(() => _childrenUnder5++)
+                                : null,
+                          ),
+                          const Divider(height: 26, color: _kBorder),
+                          _stepperRow(
+                            title: 'Above 5 years',
+                            subtitle:
+                                '₹${_childFeePerHead.toStringAsFixed(0)} per child, up to 2 per booking',
+                            value: _childrenAbove5,
+                            onMinus: _childrenAbove5 > 0
+                                ? () => setState(() => _childrenAbove5--)
+                                : null,
+                            onPlus: _childrenAbove5 < 2
+                                ? () => setState(() => _childrenAbove5++)
+                                : null,
+                          ),
+                        ],
+                      ])),
+                      const SizedBox(height: 22),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _sectionLabel('Coupon Code'),
+                          GestureDetector(
+                            onTap: _showAllCoupons,
+                            child:
+                                Row(mainAxisSize: MainAxisSize.min, children: [
+                              const Icon(Icons.local_offer_outlined,
+                                  size: 15, color: _kOrange),
+                              const SizedBox(width: 4),
+                              Text('View All',
+                                  style: TextStyle(
+                                      color: _kOrange,
+                                      fontSize: 12.5,
+                                      fontWeight: FontWeight.w700)),
+                            ]),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      if (_suggestedCoupons.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Text(
+                            'Try: ${_suggestedCoupons.map((c) => c.code).join(' · ')}',
+                            style: const TextStyle(
+                                fontSize: 12, color: _kMuted, height: 1.4),
+                          ),
+                        ),
+                      Row(children: [
+                        Expanded(
+                          child: TextField(
+                            controller: _couponCtrl,
+                            textCapitalization: TextCapitalization.characters,
+                            style: const TextStyle(fontSize: 14, color: _kInk),
+                            decoration: InputDecoration(
+                              isDense: true,
+                              hintText: 'Enter coupon code',
+                              hintStyle:
+                                  const TextStyle(color: _kMuted, fontSize: 13),
+                              filled: true,
+                              fillColor: _kFaint,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                              contentPadding: const EdgeInsets.symmetric(
+                                  vertical: 14, horizontal: 14),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        SizedBox(
+                          height: 48,
+                          child: ElevatedButton(
+                            onPressed: _couponLoading ? null : _applyCoupon,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _kOrange,
+                              foregroundColor: Colors.white,
+                              elevation: 0,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 22),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            child: _couponLoading
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                        strokeWidth: 2, color: Colors.white))
+                                : const Text('APPLY',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w800,
+                                        fontSize: 12.5)),
+                          ),
+                        ),
+                      ]),
+                      if (_couponResult != null) ...[
+                        const SizedBox(height: 8),
+                        Row(children: [
+                          Icon(
+                            _couponResult!.valid
+                                ? Icons.check_circle
+                                : Icons.error_outline,
+                            size: 15,
+                            color: _couponResult!.valid ? _kGreen : _kError,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(_couponResult!.message,
+                                style: TextStyle(
+                                    fontSize: 12.5,
+                                    color: _couponResult!.valid
+                                        ? _kGreen
+                                        : _kError,
+                                    fontWeight: FontWeight.w600)),
+                          ),
+                        ]),
+                      ],
+                      const SizedBox(height: 22),
+
+                      if (_guests > 1) ...[
+                        _sectionLabel("Other Guests' Details"),
+                        const SizedBox(height: 10),
+                        _OtherGuestsForm(
+                          nameCtrls: _guestNameCtrls,
+                          phoneCtrls: _guestPhoneCtrls,
+                        ),
+                        const SizedBox(height: 22),
+                      ],
+
+                      _sectionLabel('Price Breakdown'),
+                      const SizedBox(height: 10),
+                      _PriceBreakdownCard(
+                        pricePerNight: widget.tent.price1Day,
+                        nights: _duration,
+                        tents: _tents,
+                        guests: _guests,
+                        childrenAbove5: _childrenAbove5,
+                        childrenUnder5: _childrenUnder5,
+                        baseAmount: _baseAmount,
+                        discountAmount: _discountAmount,
+                        couponCode: _couponResult?.valid == true
+                            ? _couponResult?.code
+                            : null,
+                        gstRate: _gstRate,
+                        cgstAmount: _cgstAmount,
+                        sgstAmount: _sgstAmount,
+                        childFee: _childFee,
+                        total: _totalPrice,
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
-            _BottomBar(
-              totalLabel: _readyToBook ? totalLabel : null,
-              enabled: _readyToBook && !_isLoading,
-              isLoading: _isLoading,
-              onPressed: _confirm,
+            _PageWidth(
+              child: _BottomBar(
+                totalLabel: _readyToBook ? totalLabel : null,
+                enabled: _readyToBook && !_isLoading,
+                isLoading: _isLoading,
+                onPressed: _confirm,
+              ),
             ),
           ],
         ),
@@ -673,7 +708,8 @@ class _BookingScreenState extends State<BookingScreen> {
     ]);
   }
 
-  Widget _stepperBtn(IconData icon, VoidCallback? onTap, {bool filled = false}) {
+  Widget _stepperBtn(IconData icon, VoidCallback? onTap,
+      {bool filled = false}) {
     final enabled = onTap != null;
     return GestureDetector(
       onTap: onTap,
@@ -698,7 +734,8 @@ class _BookingScreenState extends State<BookingScreen> {
   /// under the weekday once both dates are picked, so the stay length is
   /// visible right where the range was just chosen instead of only lower
   /// down the screen.
-  Widget _dateBox(String label, DateTime? date, {int? nights}) {
+  Widget _dateBox(String label, DateTime? date,
+      {int? nights, String? timeLabel}) {
     final dateFmt = DateFormat('MMM d, yyyy');
     final dayFmt = DateFormat('EEE');
     final picked = date != null;
@@ -728,18 +765,39 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(height: 2),
             Text(dayFmt.format(date),
                 style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600, color: _kOrange)),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _kOrange)),
+          ],
+          if (picked && timeLabel != null) ...[
+            const SizedBox(height: 2),
+            Text(timeLabel,
+                style: const TextStyle(
+                    fontSize: 12, fontWeight: FontWeight.w600, color: _kMuted)),
           ],
           if (picked && nights != null && nights > 0) ...[
             const SizedBox(height: 2),
             Text('$nights night${nights == 1 ? '' : 's'}',
                 style: const TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600, color: _kOrange)),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: _kOrange)),
           ],
         ],
       ),
     );
   }
+
+  Widget _stayTimesNote() => Row(children: const [
+        Icon(Icons.schedule, size: 15, color: _kOrange),
+        SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            'Check-in 11:00 AM · Check-out 11:00 AM (fixed). One night = 11:00 AM to 11:00 AM next day.',
+            style: TextStyle(fontSize: 12, color: _kMuted, height: 1.3),
+          ),
+        ),
+      ]);
 
   Widget _availabilityLegend() {
     // Real per-day occupancy from the backend — how many tents of this
@@ -768,8 +826,8 @@ class _BookingScreenState extends State<BookingScreen> {
     final daysInMonth =
         DateTime(firstOfMonth.year, firstOfMonth.month + 1, 0).day;
     final leadingBlanks = firstOfMonth.weekday % 7; // Sun=0 .. Sat=6
-    final today = DateTime(
-        DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    final today =
+        DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
     return Column(children: [
       Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
@@ -792,8 +850,8 @@ class _BookingScreenState extends State<BookingScreen> {
             const SizedBox(
               width: 12,
               height: 12,
-              child: CircularProgressIndicator(
-                  strokeWidth: 1.6, color: _kOrange),
+              child:
+                  CircularProgressIndicator(strokeWidth: 1.6, color: _kOrange),
             ),
           ],
         ]),
@@ -819,9 +877,8 @@ class _BookingScreenState extends State<BookingScreen> {
                         style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
-                            color: e.key == 0 || e.key == 6
-                                ? _kOrange
-                                : _kMuted)),
+                            color:
+                                e.key == 0 || e.key == 6 ? _kOrange : _kMuted)),
                   ),
                 ))
             .toList(),
@@ -830,14 +887,13 @@ class _BookingScreenState extends State<BookingScreen> {
       GridView.builder(
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
-        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 7),
+        gridDelegate:
+            const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 7),
         itemCount: leadingBlanks + daysInMonth,
         itemBuilder: (context, i) {
           if (i < leadingBlanks) return const SizedBox.shrink();
           final day = i - leadingBlanks + 1;
-          final date =
-              DateTime(_calendarMonth.year, _calendarMonth.month, day);
+          final date = DateTime(_calendarMonth.year, _calendarMonth.month, day);
           final isPast = date.isBefore(today);
           final isCheckIn = _checkInDate != null &&
               date.difference(_checkInDate!).inDays == 0;
@@ -1124,7 +1180,9 @@ class _TentSummaryCard extends StatelessWidget {
             children: [
               Text(tent.name,
                   style: const TextStyle(
-                      fontWeight: FontWeight.bold, fontSize: 15.5, color: _kInk)),
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15.5,
+                      color: _kInk)),
               const SizedBox(height: 3),
               Text(tent.location,
                   style: const TextStyle(fontSize: 12.5, color: _kMuted)),
@@ -1165,7 +1223,9 @@ class _OtherGuestsForm extends StatelessWidget {
             children: [
               Text('Guest ${i + 2}',
                   style: const TextStyle(
-                      color: _kInk, fontWeight: FontWeight.bold, fontSize: 12.5)),
+                      color: _kInk,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 12.5)),
               const SizedBox(height: 10),
               TextField(
                 controller: nameCtrls[i],
@@ -1216,8 +1276,13 @@ class _OtherGuestsForm extends StatelessWidget {
 class _PriceBreakdownCard extends StatelessWidget {
   final double pricePerNight;
   final int nights, tents, guests, childrenAbove5, childrenUnder5;
-  final double baseAmount, discountAmount, gstRate, cgstAmount, sgstAmount,
-      childFee, total;
+  final double baseAmount,
+      discountAmount,
+      gstRate,
+      cgstAmount,
+      sgstAmount,
+      childFee,
+      total;
   final String? couponCode;
   const _PriceBreakdownCard({
     required this.pricePerNight,
@@ -1259,7 +1324,8 @@ class _PriceBreakdownCard extends StatelessWidget {
         if (childrenUnder5 > 0)
           _row('  · 5 years & under', '$childrenUnder5 (free)'),
         const Divider(height: 22, color: _kBorder),
-        _row('₹${pricePerNight.toStringAsFixed(0)} × $nights night${nights == 1 ? '' : 's'} × $tents tent${tents == 1 ? '' : 's'}',
+        _row(
+            '₹${pricePerNight.toStringAsFixed(0)} × $nights night${nights == 1 ? '' : 's'} × $tents tent${tents == 1 ? '' : 's'}',
             '₹${baseAmount.toStringAsFixed(0)}'),
         if (discountAmount > 0)
           _row('Coupon${couponCode != null ? ' ($couponCode)' : ''}',
@@ -1288,7 +1354,8 @@ class _PriceBreakdownCard extends StatelessWidget {
 
   Widget _row(String label, String value, {Color? valueColor}) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 5),
-        child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        child:
+            Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
           Expanded(
             child: Text(label,
                 style: const TextStyle(color: _kMuted, fontSize: 12.5)),
@@ -1363,7 +1430,9 @@ class _BottomBar extends StatelessWidget {
                           strokeWidth: 2, color: Colors.white),
                     )
                   : Text(
-                      enabled ? 'Proceed to Payment' : 'Select dates to continue',
+                      enabled
+                          ? 'Proceed to Payment'
+                          : 'Select dates to continue',
                       style: TextStyle(
                         color: enabled ? Colors.white : _kMuted,
                         fontWeight: FontWeight.w800,

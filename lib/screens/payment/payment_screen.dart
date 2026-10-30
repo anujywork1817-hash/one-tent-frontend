@@ -1,9 +1,10 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
-import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:razorpay_web/razorpay_web.dart';
 
 import '../../data/models/models.dart';
 import '../../providers/providers.dart';
@@ -59,44 +60,69 @@ class _PaymentScreenState extends State<PaymentScreen> {
       _error = null;
     });
 
-    final tentProv = context.read<TentProvider>();
-    final data = await tentProv.createPaymentOrder(widget.booking.id);
+    try {
+      final tentProv = context.read<TentProvider>();
+      final data = await tentProv.createPaymentOrder(widget.booking.id);
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    if (data == null) {
-      setState(() {
-        _error = tentProv.error ?? 'Failed to create payment order';
-        _isLoading = false;
-      });
-      return;
+      if (data == null) {
+        setState(() {
+          _error = tentProv.error ?? 'Failed to create payment order';
+          _isLoading = false;
+        });
+        return;
+      }
+
+      // Tolerant parsing: the backend may send numbers as int, double or
+      // string, and a hard `as int` cast would throw before Razorpay opens.
+      final orderId = data['razorpay_order_id']?.toString() ?? '';
+      final amount = data['amount'] is num
+          ? (data['amount'] as num).toInt()
+          : int.tryParse(data['amount']?.toString() ?? '') ?? 0;
+      final currency = data['currency']?.toString() ?? 'INR';
+      final keyId = data['key_id']?.toString() ?? '';
+
+      if (keyId.isEmpty || orderId.isEmpty || amount <= 0) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Bad order response: key=${keyId.isNotEmpty} '
+              'order=${orderId.isNotEmpty} amount=$amount';
+        });
+        return;
+      }
+
+      final visitor = context.read<AuthProvider>().visitor;
+      final options = <String, dynamic>{
+        'key': keyId,
+        'amount': amount,
+        'currency': currency,
+        'order_id': orderId,
+        'name': 'One Tent',
+        'description': 'Booking Ref: ${widget.booking.bookingRef}',
+        'prefill': {
+          'contact': visitor?.phone ?? '',
+          'email': visitor?.email ?? '',
+        },
+        'theme': {'color': '#4A1000'},
+        // Mobile-only option; passing it on web can make checkout.js throw.
+        if (!kIsWeb)
+          'external': {
+            'wallets': ['paytm', 'phonepe', 'googlepay']
+          },
+      };
+
+      setState(() => _isLoading = false);
+      _razorpay.open(options);
+    } catch (e, st) {
+      debugPrint('PAYMENT ERROR: $e\n$st');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _error = 'Payment error: $e';
+        });
+      }
     }
-
-    final orderId = data['razorpay_order_id'] as String? ?? '';
-    final amount = data['amount'] as int? ?? 0;
-    final currency = data['currency'] as String? ?? 'INR';
-    final keyId = data['key_id'] as String? ?? '';
-
-    final visitor = context.read<AuthProvider>().visitor;
-    final options = {
-      'key': keyId,
-      'amount': amount,
-      'currency': currency,
-      'order_id': orderId,
-      'name': 'One Tent',
-      'description': 'Booking Ref: ${widget.booking.bookingRef}',
-      'prefill': {
-        'contact': visitor?.phone ?? '',
-        'email': visitor?.email ?? '',
-      },
-      'theme': {'color': '#4A1000'},
-      'external': {
-        'wallets': ['paytm', 'phonepe', 'googlepay']
-      },
-    };
-
-    setState(() => _isLoading = false);
-    _razorpay.open(options);
   }
 
   void _onSuccess(PaymentSuccessResponse response) async {
@@ -176,62 +202,65 @@ class _PaymentScreenState extends State<PaymentScreen> {
           context.go('/home');
         },
         child: AlertDialog(
-        backgroundColor: _kCardBg,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Success icon
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: _kSuccess.withValues(alpha: 0.10),
-                shape: BoxShape.circle,
-                border: Border.all(
-                    color: _kSuccess.withValues(alpha: 0.35), width: 2),
+          backgroundColor: _kCardBg,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Success icon
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: _kSuccess.withValues(alpha: 0.10),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                      color: _kSuccess.withValues(alpha: 0.35), width: 2),
+                ),
+                child:
+                    const Icon(Icons.check_circle, color: _kSuccess, size: 40),
               ),
-              child: const Icon(Icons.check_circle, color: _kSuccess, size: 40),
-            ),
-            const SizedBox(height: 16),
-            const Text('Payment Successful',
-                style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
-                    color: _kTextDark)),
-            const SizedBox(height: 8),
-            Text('Ref: ${widget.booking.bookingRef}',
-                style: const TextStyle(color: _kTextMid, fontSize: 13)),
-            const SizedBox(height: 10),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              decoration: BoxDecoration(
-                color: _kGold.withValues(alpha: 0.10),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: _kGold.withValues(alpha: 0.35)),
-              ),
-              child: Text(
-                  '₹${widget.booking.amountDue.toStringAsFixed(0)} paid',
-                  style: const TextStyle(
-                      color: _kGold,
+              const SizedBox(height: 16),
+              const Text('Payment Successful',
+                  style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      fontSize: 18)),
-            ),
-            const SizedBox(height: 6),
-            Text('Payment ID: $paymentId',
-                style: const TextStyle(fontSize: 11, color: _kTextLight)),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-              context.go('/my-bookings');
-            },
-            child: const Text('View My Bookings',
-                style: TextStyle(color: _kGold, fontWeight: FontWeight.w600)),
+                      fontSize: 20,
+                      color: _kTextDark)),
+              const SizedBox(height: 8),
+              Text('Ref: ${widget.booking.bookingRef}',
+                  style: const TextStyle(color: _kTextMid, fontSize: 13)),
+              const SizedBox(height: 10),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                decoration: BoxDecoration(
+                  color: _kGold.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: _kGold.withValues(alpha: 0.35)),
+                ),
+                child: Text(
+                    '₹${widget.booking.amountDue.toStringAsFixed(0)} paid',
+                    style: const TextStyle(
+                        color: _kGold,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18)),
+              ),
+              const SizedBox(height: 6),
+              Text('Payment ID: $paymentId',
+                  style: const TextStyle(fontSize: 11, color: _kTextLight)),
+            ],
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                context.go('/my-bookings');
+              },
+              child: const Text('View My Bookings',
+                  style: TextStyle(color: _kGold, fontWeight: FontWeight.w600)),
+            ),
+          ],
         ),
       ),
     );
@@ -269,7 +298,9 @@ class _PaymentScreenState extends State<PaymentScreen> {
           ),
           title: const Text('Payment',
               style: TextStyle(
-                  color: _kTextDark, fontSize: 17, fontWeight: FontWeight.w700)),
+                  color: _kTextDark,
+                  fontSize: 17,
+                  fontWeight: FontWeight.w700)),
           centerTitle: false,
           bottom: PreferredSize(
             preferredSize: const Size.fromHeight(1),
@@ -285,17 +316,19 @@ class _PaymentScreenState extends State<PaymentScreen> {
               const SizedBox(height: 4),
 
               // ── Booking summary ────────────────────────────────────────
-              // Plain text, no boxed card — this is the same "screen title"
-              // weight everywhere else in the app, not a separate widget
-              // fighting the price card below it for attention.
               Text(booking.bookingRef,
                   style: const TextStyle(
                       color: _kTextDark,
                       fontSize: 22,
                       fontWeight: FontWeight.w800)),
               const SizedBox(height: 4),
-              Text('${booking.duration} night${booking.duration == 1 ? '' : 's'} · ${booking.numGuests} guest${booking.numGuests == 1 ? '' : 's'}',
+              Text(
+                  '${booking.duration} night${booking.duration == 1 ? '' : 's'} · ${booking.numGuests} guest${booking.numGuests == 1 ? '' : 's'}',
                   style: const TextStyle(color: _kTextMid, fontSize: 13.5)),
+              const SizedBox(height: 4),
+              Text(
+                  'Check-in ${booking.checkInTimeLabel} · Check-out ${booking.checkOutTimeLabel}',
+                  style: const TextStyle(color: _kTextLight, fontSize: 12.5)),
               const SizedBox(height: 24),
 
               // ── Price breakdown ────────────────────────────────────────
@@ -326,7 +359,8 @@ class _PaymentScreenState extends State<PaymentScreen> {
                     _breakdownRow(
                       'Guests',
                       null,
-                      valueText: '${booking.numGuests} adult${booking.numGuests == 1 ? '' : 's'}'
+                      valueText:
+                          '${booking.numGuests} adult${booking.numGuests == 1 ? '' : 's'}'
                           '${(booking.childrenUnder5 + booking.childrenAbove5) > 0 ? ' + ${booking.childrenUnder5 + booking.childrenAbove5} child${(booking.childrenUnder5 + booking.childrenAbove5) == 1 ? '' : 'ren'}' : ''}',
                     ),
                     // Per-tax figures only add up cleanly for a single-tent

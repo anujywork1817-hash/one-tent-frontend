@@ -90,8 +90,6 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
           // ── Dark maroon hero header ──────────────────────────────────
           _DetailHeader(
             isConfirmed: isConfirmed,
-            onQrTap: () =>
-                context.push('/booking-qr/${booking.id}', extra: booking),
           ),
 
           // ── Scrollable cream body ────────────────────────────────────
@@ -163,7 +161,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             ),
                           ]),
                           const Divider(color: _kDivider, height: 20),
-                          _detailRow('Booked On', _bookedOnIst(booking.bookedAt)),
+                          _detailRow(
+                              'Booked On', _bookedOnIst(booking.bookedAt)),
                         ],
                       ),
                     ),
@@ -191,14 +190,14 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                         _detailRow(
                             'Check-in',
                             checkIn != null
-                                ? fmt.format(checkIn)
-                                : booking.checkInDate),
+                                ? '${fmt.format(checkIn)}, ${booking.checkInTimeLabel}'
+                                : '${booking.checkInDate}, ${booking.checkInTimeLabel}'),
                         const Divider(color: _kDivider, height: 20),
                         _detailRow(
                             'Check-out',
                             checkOut != null
-                                ? fmt.format(checkOut)
-                                : booking.checkOutDate),
+                                ? '${fmt.format(checkOut)}, ${booking.checkOutTimeLabel}'
+                                : '${booking.checkOutDate}, ${booking.checkOutTimeLabel}'),
                         const Divider(color: _kDivider, height: 20),
                         _detailRow('Nights', '${booking.nights}'),
                         if (booking.roomCount > 1) ...[
@@ -222,7 +221,8 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                             for (var i = 0;
                                 i < booking.additionalGuests.length;
                                 i++) ...[
-                              if (i > 0) const Divider(color: _kDivider, height: 20),
+                              if (i > 0)
+                                const Divider(color: _kDivider, height: 20),
                               _detailRow(
                                 booking.additionalGuests[i].name,
                                 booking.additionalGuests[i].phone,
@@ -311,7 +311,10 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                           physics: const NeverScrollableScrollPhysics(),
                           mainAxisSpacing: 10,
                           crossAxisSpacing: 10,
-                          childAspectRatio: 3.5,
+                          childAspectRatio:
+                              MediaQuery.of(context).size.width >= 600
+                                  ? 12
+                                  : 3.5,
                           children: _confirmedAmenities
                               .map((a) => Row(children: [
                                     Icon(a['icon'] as IconData,
@@ -383,14 +386,56 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                       ),
                       const SizedBox(height: 20),
 
-                      // QR button
-                      _ActionButton(
-                        label: 'View QR Code',
-                        icon: Icons.qr_code_rounded,
-                        onTap: () => context.push('/booking-qr/${booking.id}',
-                            extra: booking),
-                      ),
+                      // Self check-in: guest scans the QR fixed at their tent
+                      if (booking.isCheckedIn)
+                        Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(
+                              vertical: 14, horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: _kGreen.withValues(alpha: 0.08),
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle_rounded,
+                                  color: _kGreen, size: 18),
+                              SizedBox(width: 8),
+                              Text('Checked in',
+                                  style: TextStyle(
+                                      color: _kGreen,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15)),
+                            ],
+                          ),
+                        )
+                      else ...[
+                        _ActionButton(
+                          label: 'Scan Tent QR to Check In',
+                          icon: Icons.qr_code_scanner_rounded,
+                          onTap: () async {
+                            final ok = await context.push<bool>(
+                                '/booking-scan/${booking.id}',
+                                extra: booking);
+                            if (ok == true && mounted) {
+                              setState(() => booking = booking.copyWith(
+                                  checkedInAt: DateTime.now()));
+                            }
+                          },
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          'Scan the QR at your tent. Check-in opens at '
+                          '${booking.checkInTimeLabel} on your check-in date.',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                              color: _kTextMuted, fontSize: 11.5),
+                        ),
+                      ],
                       const SizedBox(height: 12),
+
+                      // QR button
 
                       // Review — in-app now instead of opening an email
                       // draft, and visible to other guests on this tent's
@@ -408,7 +453,7 @@ class _BookingDetailScreenState extends State<BookingDetailScreen> {
                     ],
 
                     // ── Cancel button (pending or confirmed) ───────────
-                    if (isPending || isConfirmed) ...[
+                    if (isPending || (isConfirmed && !booking.isCheckedIn)) ...[
                       _CancelButton(booking: booking, isConfirmed: isConfirmed),
                       const SizedBox(height: 12),
                     ],
@@ -472,8 +517,7 @@ String _bookedOnIst(DateTime dt) {
 // ── Header — same plain white chrome as every other screen ─────────────────
 class _DetailHeader extends StatelessWidget {
   final bool isConfirmed;
-  final VoidCallback onQrTap;
-  const _DetailHeader({required this.isConfirmed, required this.onQrTap});
+  const _DetailHeader({required this.isConfirmed});
 
   @override
   Widget build(BuildContext context) {
@@ -489,8 +533,8 @@ class _DetailHeader extends StatelessWidget {
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.chevron_left,
-                    color: _kTextDark, size: 28),
+                icon:
+                    const Icon(Icons.chevron_left, color: _kTextDark, size: 28),
                 onPressed: () => context.pop(),
               ),
               const Expanded(
@@ -503,13 +547,6 @@ class _DetailHeader extends StatelessWidget {
                   ),
                 ),
               ),
-              if (isConfirmed)
-                IconButton(
-                  icon: const Icon(Icons.qr_code_rounded,
-                      color: _kGold, size: 22),
-                  onPressed: onQrTap,
-                  tooltip: 'View QR Code',
-                ),
             ],
           ),
         ),
