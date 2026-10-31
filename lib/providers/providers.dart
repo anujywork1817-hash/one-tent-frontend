@@ -7,6 +7,7 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../data/models/models.dart';
 import '../data/repositories/repositories.dart';
 import '../core/constants/app_constants.dart';
+import '../core/network/api_client.dart';
 
 // ── helpers ────────────────────────────────────────────────────────────────
 
@@ -118,8 +119,8 @@ class AuthProvider extends ChangeNotifier {
 
       if (token != null && visitorJson != null) {
         try {
-          _visitor = Visitor.fromJson(
-              jsonDecode(visitorJson) as Map<String, dynamic>);
+          _visitor =
+              Visitor.fromJson(jsonDecode(visitorJson) as Map<String, dynamic>);
           _isAuthenticated = true;
           notifyListeners();
 
@@ -456,6 +457,17 @@ class AuthProvider extends ChangeNotifier {
     }
   }
 
+  Future<bool> uploadPassportBytes(List<int> bytes, String filename) async {
+    try {
+      await _passportRepo.uploadPassportBytes(bytes, filename);
+      return true;
+    } catch (e) {
+      _error = dioErrorMessage(e);
+      notifyListeners();
+      return false;
+    }
+  }
+
   Future<Map<String, dynamic>> getPassportStatus() async {
     return await _passportRepo.getStatus();
   }
@@ -626,7 +638,8 @@ class TentProvider extends ChangeNotifier {
   }
 
   /// Preview-checks a coupon code — see TentRepository.validateCoupon.
-  Future<CouponPreview> validateCoupon(String code) => _tentRepo.validateCoupon(code);
+  Future<CouponPreview> validateCoupon(String code) =>
+      _tentRepo.validateCoupon(code);
 
   /// A few currently-usable coupon codes to suggest — see
   /// TentRepository.activeCoupons.
@@ -842,6 +855,37 @@ class TentProvider extends ChangeNotifier {
       _error = dioErrorMessage(e);
       notifyListeners();
       return [];
+    }
+  }
+
+  Future<Map<String, String>> selfCheckIn(String bookingId, String code) async {
+    try {
+      final res = await AppDio().dio.post(
+        '/bookings/$bookingId/self-checkin',
+        data: {'code': code},
+      );
+      final body = res.data as Map<String, dynamic>;
+      final data = (body['data'] as Map?) ?? const {};
+      final result = data['result']?.toString() ?? 'error';
+      if (result == 'checked_in' || result == 'already_checked_in') {
+        final i = _bookings.indexWhere((b) => b.id == bookingId);
+        if (i != -1) {
+          _bookings[i] = _bookings[i].copyWith(checkedInAt: DateTime.now());
+        }
+        notifyListeners();
+      }
+      return {'result': result, 'message': body['message']?.toString() ?? ''};
+    } on DioException catch (e) {
+      final invalid = e.response?.statusCode == 400;
+      return {
+        'result': invalid ? 'invalid' : 'error',
+        'message': dioErrorMessage(e),
+      };
+    } catch (_) {
+      return {
+        'result': 'error',
+        'message': 'Something went wrong. Please try again.',
+      };
     }
   }
 

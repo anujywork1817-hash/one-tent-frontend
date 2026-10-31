@@ -172,7 +172,8 @@ class TentRepository {
     final list = res.data['data'] as List? ?? [];
     return {
       for (final e in list)
-        (e['date'] as String): DayAvailability.fromJson(e as Map<String, dynamic>),
+        (e['date'] as String):
+            DayAvailability.fromJson(e as Map<String, dynamic>),
     };
   }
 
@@ -198,7 +199,8 @@ class TentRepository {
       'additional_guests': additionalGuests.map((g) => g.toJson()).toList(),
       'currency': currency,
       'room_count': roomCount,
-      if (couponCode != null && couponCode.isNotEmpty) 'coupon_code': couponCode,
+      if (couponCode != null && couponCode.isNotEmpty)
+        'coupon_code': couponCode,
       'children_under5': childrenUnder5,
       'children_above5': childrenAbove5,
     });
@@ -356,6 +358,15 @@ class PassportRepository {
   Future<Map<String, dynamic>> uploadPassport(String filePath) async {
     final formData = FormData.fromMap({
       'passport': await MultipartFile.fromFile(filePath),
+    });
+    final res = await _api.dio.post('/passport/upload', data: formData);
+    return res.data['data'] as Map<String, dynamic>;
+  }
+
+  Future<Map<String, dynamic>> uploadPassportBytes(
+      List<int> bytes, String filename) async {
+    final formData = FormData.fromMap({
+      'passport': MultipartFile.fromBytes(bytes, filename: filename),
     });
     final res = await _api.dio.post('/passport/upload', data: formData);
     return res.data['data'] as Map<String, dynamic>;
